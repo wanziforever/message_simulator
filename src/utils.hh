@@ -79,6 +79,6 @@ std::string& trim(std::string&);
 // tell whether the line is a comments line
 bool isComments(std::string&, std::string comment="#");
 bool isRelativePath(const std::string&);;
-
+int binaryToAscii(char*, int, char*);
 UTILS_NAMESPACE_END
 #endif

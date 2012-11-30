@@ -4,4 +4,5 @@
 *.a
 a.out
 ngbSim
+bin/*
 

@@ -46,19 +46,40 @@ bool isComments(string &str, string comment)
 {
   return !str.compare(0, comment.size(), comment);
 }
-
-void binaryToAsciiForOneChar(char *input, char *output)
+// convert a number to Hex string, the number should stored in
+// a char type varaible
+char toHex(char input)
 {
-  
+  if (input > 0 && input < 10) {
+    return ('0' + input);
+  } else if (input >=10 && input < 16) {
+    return ('a' + input - 10);
+  } else {
+    return '0';
+  }
+}
+
+void binaryToHexForOneChar(char c, char *output)
+{
+  char input_char = c;
+  char hig = (input_char >> 4) & 0x0f;
+  char low = (input_char) &  0x0f;
+  *output = toHex(hig);
+  *(output+1) = toHex(low);
 }
 
 // convert the binary data to a readable text format string with
 // the Hex string
-void binaryToAscii(char *raw, int len, char *output)
+int binaryToAscii(char *raw, int len, char *output)
 {
-  int pos = 0;
-  
+  int pos_in_raw = 0;
+  int pos_in_output = 0;
+  for (; pos_in_raw < len; pos_in_raw++) {
+    char raw_char = *(raw + pos_in_raw);
+    binaryToHexForOneChar(raw_char, output + pos_in_output);
+    pos_in_output += 2;
+  }
+  return pos_in_output;
 }
-
 
 UTILS_NAMESPACE_END
