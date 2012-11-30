@@ -1,5 +1,0 @@
-namespace mynamespace {
-
-  std::string myname;
-
-}
