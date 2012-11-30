@@ -1,0 +1,14 @@
+DEBUG LOG       FileName: container.cc line number: 80 trace: 2008
+there are 11 avp items for 0
+avpName(filePath), avpCode(222), length(256), type(), value(/Media/123456)
+avpName(index), avpCode(222), length(0), type(), value(1)
+avpName(intPadding), avpCode(222), length(0), type(), value()
+avpName(privateData), avpCode(222), length(128), type(), value(private_data_denny_input)
+avpName(privateDataSize), avpCode(222), length(0), type(), value(24)
+avpName(size), avpCode(222), length(0), type(), value(50)
+avpName(handle), avpCode(222), length(0), type(), value(234234)
+avpName(checksum), avpCode(222), length(16), type(), value(2234234234)
+avpName(destinationIP), avpCode(222), length(8), type(), value(10.0.64.12)
+avpName(destinationCount), avpCode(222), length(0), type(), value(3)
+avpName(reserved), avpCode(222), length(121), type(), value()
+END OF REPORT +++
