@@ -18,16 +18,17 @@
 
 #include <vector>
 #include <iostream>
-class AvpRule
+class AvpEntry
 {
 public:
-  AvpRule() : avpCode_(0), length_(0) {}
-  AvpRule(const AvpRule &avp) {
+  AvpEntry() : avpCode_(0), length_(0) {}
+  AvpEntry(const AvpEntry &avp) {
     avpName_ = avp.avpName_;
     value_ = avp.value_;
     avpCode_ = avp.avpCode_;
     length_ = avp.length_;
     type_ = avp.type_;
+    quantity_ = avp.quantity_;
   }
   bool parseAppToRaw(char *raw, int &len);
   bool parseRawToApp(char *raw, int &len);
@@ -37,17 +38,20 @@ public:
     std::string getType() { return type_; }
   int getCode() { return avpCode_; }
   int getLength() { return length_; }
+  int getQuantity() { return quantity_}
 
   void setName(std::string name) { avpName_ = name; }
   void setValue(std::string val) { value_ = val; }
   void setType(std::string tp) { type_ = tp; }
   void setCode(int code) { avpCode_ = code; }
   void setLength(int len) { length_ = len; }
+  void setQuantity(int quantity) { quantity_ = quantity ;}
 private:
   std::string avpName_;
   std::string value_;
   int avpCode_;
   int length_;
+  int quantity_;
   std::string type_;
 };
 
@@ -57,7 +61,7 @@ public:
   Container() {}
   ~Container() {}
   // add the avp to avp list, only set the name and value
-  // field for the avprule structure, and will full fill
+  // field for the avpEntry structure, and will full fill
   // the structure by fillAvpsWithTypesFromDictionary() menthod
   bool addAvp( std::string name, std::string value );
   bool addAvp(std::string name, std::string type, int len);
@@ -73,9 +77,8 @@ public:
   int parseRawToApp(char *raw);
 
 private:
-  std::vector<AvpRule> avpList_;
+  std::vector<AvpEntry> avpList_;
 };
 
 #endif
-
   

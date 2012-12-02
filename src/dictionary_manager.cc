@@ -31,6 +31,7 @@ static const XMLCh *g_xmlch_attribute_name = NULL;
 static const XMLCh *g_xmlch_attribute_code = NULL;
 static const XMLCh *g_xmlch_attribute_type = NULL;
 static const XMLCh *g_xmlch_attribute_length = NULL;
+static const XMLCh *g_xmlch_attribute_quantity = NULL;
 
 static XercesDOMParser::ValSchemes gValScheme = XercesDOMParser::Val_Auto;
 
@@ -153,6 +154,7 @@ bool DictionaryManager::init(const std::string &dictFile)
   g_xmlch_attribute_code = XMLString::transcode("code");
   g_xmlch_attribute_type = XMLString::transcode("type");
   g_xmlch_attribute_length = XMLString::transcode("length");
+  g_xmlch_attribute_quantity = XMLString::transcode("quantity");
 
   // Create our parser, then attach an error handler to the parser.
   // The parser will call back to methods of the ErrorHandler if it
@@ -215,7 +217,6 @@ bool DictionaryManager::getOneCommand(const DOMNode *n, Command *output)
   DOMNode *m = n->getFirstChild();
   for (m = getNextElementNode(m); m != NULL; m = getNextElementNode(m)) {
     if (!XMLString::equals(m->getNodeName(), g_xmlch_avpRule)) {
-      // if (XMLString::compareIString(m->getNodeName(), g_xmlch_avpRule)) {
       continue;
     }
  
@@ -225,17 +226,7 @@ bool DictionaryManager::getOneCommand(const DOMNode *n, Command *output)
                "DictionaryManager::getOneCommand fail to get avp by avpName");
       return false;
     }
-    // if the length is provided in the avprule under the command
-    // definition, should override the length which defined in the
-    // avp definition, the length of the avp can be specified by
-    // different command
-    do {
-      std::string length;
-      length = getAttributeValue(m, g_xmlch_attribute_length);
-      if (length.empty())
-        break;
-      avp.setLength(length);
-    } while(0); // end of overrid avp length
+    avp.setQuantity(getAttributeValue(m, g_xml_attribute_quantity));
     command->addAvp(avp);
   }
   return true;
@@ -245,7 +236,7 @@ bool DictionaryManager::getCommandByName(std::string name, Command *output)
 {
   debugLog(NGB_DICT_MGR, "DictionaryManager::getCommandByName enter...");
   assert(output);
-  // some DUPLICATED CODE, consider to optimize it
+  // TODO: some DUPLICATED CODE, consider to optimize it
   DOMDocument *doc = parser_->getDocument();
   DOMNodeList *avpNodeList = doc->getElementsByTagName(g_xmlch_command);
   Command *commandPtr = output;
@@ -278,8 +269,8 @@ bool DictionaryManager::getAvpByName(const std::string &name, Avp *output)
     }
     avp->setName(getAttributeValue(n, g_xmlch_attribute_name));
     avp->setCode(getAttributeValue(n, g_xmlch_attribute_code));
-    // avp->setType(getAttributeValue(n, g_xmlch_attribute_type));
     avp->setLength(getAttributeValue(n, g_xmlch_attribute_length));
+    // avptype is a sub tag of the avp node, use getAvpType() to get it
     avp->setType(getAvpType(n));
     return true;
   }

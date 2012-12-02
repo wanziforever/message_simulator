@@ -33,7 +33,8 @@ class Integer32ValueParser : public ValueParser
       memset(raw, 0, sizeof(int)*getQuantity());
       return true;
     }
-    len = sscanf(valueStr_, "%d", (int*)raw);
+    sscanf(valueStr_, "%d", (int*)raw);
+    len = 4;
     return true;
   }
 

@@ -27,7 +27,7 @@
     <avprule name="checksum"/>
     <avprule name="destinationIP"/>
     <avprule name="destinationCount"/>
-    <avprule name="reserved" length="121"/>
+    <avprule name="reserved" quantity="121"/>
   </command>
 
   <!-- Definition of all the supported AVPs, the avp is used

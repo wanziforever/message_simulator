@@ -82,11 +82,13 @@ bool RunItem::sendMessage()
   }
   msg.print();
   int len = msg.parseAppToRaw((char*)g_buf);
-  char *raw_readable = new char[len * 2];
+  char *raw_readable = new char[len * 2 + 1];
   // sendto(buf);
   Utils::binaryToAscii(g_buf, len, raw_readable);
+  raw_readable[len*2] = '\0';
   debugLog(NGB_RUN_ITEM,
            "RunItem::sendMessage raw data is %s", raw_readable);
+  delete[] raw_readable;
   debugLog(NGB_RUN_ITEM, "RunItem::sendMessage exit...");
   return true;
 }

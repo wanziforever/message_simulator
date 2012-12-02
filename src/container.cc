@@ -22,6 +22,7 @@
 #include "value_parser.hh"
 #include "avp_type.hh"
 #include "parser_type.hh"
+#include "utils.hh"
 
 extern DictionaryManager *dictMgr;
 
@@ -30,20 +31,20 @@ static ValueParser* createValueParser(NGB_DATA_TYPE type)
   switch (type) {
   case NGB_OCTECT_STRING_TYPE:
     debugLog(NGB_CONTAINER,
-             "AvpRule::parseAppToRaw create Octect parser...");
+             "AvpEntry::parseAppToRaw create Octect parser...");
     return new OctectValueParser;
   case NGB_UTF8_STRING_TYPE:
   case NGB_IP_ADDRESS_TYPE:
     debugLog(NGB_CONTAINER,
-             "AvpRule::parseAppToRaw create utf8 parser...");
+             "AvpEntry::parseAppToRaw create utf8 parser...");
     return new Utf8ValueParser;
   case NGB_INTEGER32_TYPE:
     debugLog(NGB_CONTAINER,
-             "AvpRule::parseAppToRaw create integer32 parser...");
+             "AvpEntry::parseAppToRaw create integer32 parser...");
     return new Integer32ValueParser;
   case NGB_INTEGER64_TYPE:
     debugLog(NGB_CONTAINER,
-             "AvpRule::parseAppToRaw create integer64 parser...");
+             "AvpEntry::parseAppToRaw create integer64 parser...");
     return new Integer64ValueParser;
   default:
     assert(0);
@@ -51,33 +52,40 @@ static ValueParser* createValueParser(NGB_DATA_TYPE type)
 }
 
 
-bool AvpRule::parseAppToRaw(char *raw, int &len)
+bool AvpEntry::parseAppToRaw(char *raw, int &len)
 {
   debugLog(NGB_CONTAINER,
-           "AvpRule::parseAppToRaw name(%s), length(%d), type(%s)",
+           "AvpEntry::parseAppToRaw name(%s), length(%d), type(%s)",
            getName().c_str(), getLength(), getType().c_str());
   AvpType *avpt;
   AvpTypeList al;
   if ((avpt = al.search(getType().c_str())) == NULL) {
-    debugLog(NGB_CONTAINER, "AvpRule::parseAppToRaw unkown avp type");
+    debugLog(NGB_CONTAINER, "AvpEntry::parseAppToRaw unkown avp type");
     return false;;
   }
   ValueParser *vp = createValueParser(avpt->getType());
   vp->setValue(getValue().c_str(), VALUE_IS_TEXT);
   vp->setQuantity(getLength());
   vp->parseAppToRaw((void *)raw, len);
+  char *raw_readable = new char[len * 2 + 1];
+  int realLen = Utils::binaryToAscii(raw, len, raw_readable);
+  raw_readable[len*2] = '\0';
+  debugLog(NGB_RUN_ITEM,
+           "RunItem::sendMessage raw data(%d/%d) is %s",
+           realLen, len, raw_readable);
+  delete[] raw_readable;
   delete vp;
   return true;
 }
 
-bool AvpRule::parseRawToApp(char *raw, int &len)
+bool AvpEntry::parseRawToApp(char *raw, int &len)
 {
-  debugLog(NGB_CONTAINER, "AvpRule::parseRawToApp enter...");
+  debugLog(NGB_CONTAINER, "AvpEntry::parseRawToApp enter...");
   AvpType *avpt;
   AvpTypeList al;
   char value[256] = {0};
   if ((avpt = al.search(getType().c_str())) == NULL) {
-    debugLog(NGB_CONTAINER, "AvpRule::parseRawToApp unkown avp type");
+    debugLog(NGB_CONTAINER, "AvpEntry::parseRawToApp unkown avp type");
     return false;;
   }
   ValueParser *vp = createValueParser(avpt->getType());
@@ -85,7 +93,7 @@ bool AvpRule::parseRawToApp(char *raw, int &len)
   vp->setQuantity(getLength());
   vp->parseRawToApp(value, len);
   setValue(std::string(value));
-  debugLog(NGB_CONTAINER, "AvpRule::parseRawToApp get value %s for avp %s",
+  debugLog(NGB_CONTAINER, "AvpEntry::parseRawToApp get value %s for avp %s",
            getValue().c_str(), getName().c_str());
   delete vp;
   return true;
@@ -93,15 +101,16 @@ bool AvpRule::parseRawToApp(char *raw, int &len)
 
 bool Container::addAvp(std::string name, std::string value)
 {
-  AvpRule avp_r;
+  AvpEntry avp_r;
   avp_r.setName(name);
   avp_r.setValue(value);
   avpList_.push_back(avp_r);
 }
 
-bool Container::addAvp(std::string name, std::string type, int len)
+bool Container::addAvp(std::string name, std::string type, int len,
+                       int quantity)
 {
-  AvpRule avp_r;
+  AvpEntry avp_r;
   avp_r.setName(name);
   avp_r.setType(type);
   avp_r.setLength(len);
@@ -114,12 +123,12 @@ int Container::parseAppToRaw(char *raw)
   int offset = 0;
   int len = 0;
   char *pos = 0; // current position the raw data will be write to
-  for (std::vector<AvpRule>::iterator it = avpList_.begin();
+  for (std::vector<AvpEntry>::iterator it = avpList_.begin();
        it != avpList_.end(); ++it) {
     pos = raw + offset;
     if (!(*it).parseAppToRaw(pos, len)) {
       debugLog(NGB_CONTAINER,
-               "Container::parseAppToRaw avpRule fail to parseAppToRaw");
+               "Container::parseAppToRaw avpEntry fail to parseAppToRaw");
     }
     offset += len;
   }
@@ -132,12 +141,12 @@ int Container::parseRawToApp(char *raw)
   int offset = 0;
   int len = 0;
   char *pos = 0; // current position the raw data will be write to
-  for (std::vector<AvpRule>::iterator it = avpList_.begin();
+  for (std::vector<AvpEntry>::iterator it = avpList_.begin();
        it != avpList_.end(); ++it) {
     pos = raw + offset;
     if (!(*it).parseRawToApp(pos, len)) {
       debugLog(NGB_CONTAINER,
-               "Container::parseRawToApp avpRule fail to parseAppToRaw");
+               "Container::parseRawToApp avpEntry fail to parseAppToRaw");
     }
     debugLog(NGB_CONTAINER, "Container::parseRawToApp get length %d", len);
     offset += len;
@@ -160,7 +169,7 @@ bool Container::fillAvpsWithTypesFromDictionary(std::string cmdName)
              "Container::fillAvpsWithTypesFromDictionary fail to get command");
     return false;
   }
-  for (std::vector<AvpRule>::iterator it = avpList_.begin();
+  for (std::vector<AvpEntry>::iterator it = avpList_.begin();
        it != avpList_.end(); ++it) {
     std::string avpName = (*it).getName();
     Avp avp;
@@ -174,6 +183,7 @@ bool Container::fillAvpsWithTypesFromDictionary(std::string cmdName)
     (*it).setCode(avp.getCode());
     (*it).setType(avp.getType());
     (*it).setLength(avp.getLength());
+    (*it).setQuantity(avp.getQuantity());
   }
   debugLog(NGB_CONTAINER,
            "Container::fillAvpsWithTypesFromDictionary exit...");
@@ -204,7 +214,8 @@ bool Container::createAvpsFromDictionary(std::string cmdName)
     name = avp.getName();
     type = avp.getType();
     length = avp.getLength();
-    addAvp(name, type, length);
+    quantity = avp.getQuantity();
+    addAvp(name, type, length, quantity);
   }
   return true;
 }
@@ -220,7 +231,7 @@ void Container::print()
   char line[256] = {0};
   // set the title
   sprintf(buf, "there are %d avp items\n", num);
-  for (std::vector<AvpRule>::iterator it = avpList_.begin();
+  for (std::vector<AvpEntry>::iterator it = avpList_.begin();
        it != avpList_.end(); ++it) {
     sprintf(line,
             "avpName(%s), avpCode(%d), length(%d), type(%s), value(%s)\n",

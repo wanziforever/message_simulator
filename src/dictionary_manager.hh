@@ -44,8 +44,9 @@ public:
   // getter and setter menthod
   std::string getName() { return name_; }
   std::string getType() { return type_; }
-  int    getCode() { return code_; }
-  int    getLength() { return length_; }
+  int getCode() { return code_; }
+  int getLength() { return length_; }
+  int getQuantity() { return quantity_; }   
   void setName( const std::string name ) { name_ = name; }
   void setType( const std::string type ) { type_ = type; }
   void setType( const char *type ) { type_ = std::string(type); }
@@ -61,11 +62,20 @@ public:
     std::stringstream(len) >> length_;
   }
 
+  void setQuantity(const int quantity) { quantity_ = quantity; }
+  void setQuantity(const std::string quantity) {
+    if (quantity.size() == 0) {
+      quantity_ = 0;
+    }
+    std::stringstream(quantity) >> quantity_;
+  }
+
   Avp& operator = (const Avp &other) {
     this->name_ = other.name_;
     this->type_ = other.type_;
     this->code_ = other.code_;
     this->length_ = other.length_;
+    this->quantity_ = other.quantity_;
     return *this;
   }
   
@@ -74,6 +84,7 @@ private:
   std::string type_;
   int         code_;
   int         length_;
+  int         quantity_;
 };
 
 // class reference to the command tag in dictionary document
@@ -134,8 +145,6 @@ public:
 private:
   std::string name_;
   int    code_;
-
-
   int    numOfAvp_;
 };
 
