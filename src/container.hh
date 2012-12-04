@@ -38,7 +38,7 @@ public:
     std::string getType() { return type_; }
   int getCode() { return avpCode_; }
   int getLength() { return length_; }
-  int getQuantity() { return quantity_}
+  int getQuantity() { return quantity_; }
 
   void setName(std::string name) { avpName_ = name; }
   void setValue(std::string val) { value_ = val; }
@@ -64,7 +64,8 @@ public:
   // field for the avpEntry structure, and will full fill
   // the structure by fillAvpsWithTypesFromDictionary() menthod
   bool addAvp( std::string name, std::string value );
-  bool addAvp(std::string name, std::string type, int len);
+  bool addAvp(std::string name, std::string type, int len,
+              int quantity);
   // full fill the avps for all ones in avpList, get full
   // information from dictionary manager object
   bool fillAvpsWithTypesFromDictionary(std::string cmdName);

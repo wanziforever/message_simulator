@@ -226,7 +226,7 @@ bool DictionaryManager::getOneCommand(const DOMNode *n, Command *output)
                "DictionaryManager::getOneCommand fail to get avp by avpName");
       return false;
     }
-    avp.setQuantity(getAttributeValue(m, g_xml_attribute_quantity));
+    avp.setQuantity(getAttributeValue(m, g_xmlch_attribute_quantity));
     command->addAvp(avp);
   }
   return true;

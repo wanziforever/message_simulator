@@ -208,6 +208,7 @@ bool Container::createAvpsFromDictionary(std::string cmdName)
   std::string name;
   std::string type;
   int length = 0;
+  int quantity = 0;
   int numOfAvps = command.getNumOfAvp();
   for (int i = 0; i < numOfAvps; i++) {
     command.getAvpByIndex(i, &avp);
@@ -234,9 +235,10 @@ void Container::print()
   for (std::vector<AvpEntry>::iterator it = avpList_.begin();
        it != avpList_.end(); ++it) {
     sprintf(line,
-            "avpName(%s), avpCode(%d), length(%d), type(%s), value(%s)\n",
-            (*it).getName().c_str(), (*it).getCode(), (*it).getLength(),
-            (*it).getType().c_str(), (*it).getValue().c_str());
+            "avpName(%s), avpCode(%d), length(%d), type(%s), value(%s), "
+            "quantity(%d)\n", (*it).getName().c_str(), (*it).getCode(),
+            (*it).getLength(), (*it).getType().c_str(),
+            (*it).getValue().c_str(), (*it).getQuantity());
     strcat(buf, line);
   }
   debugLog(NGB_CONTAINER, "%s", buf);
