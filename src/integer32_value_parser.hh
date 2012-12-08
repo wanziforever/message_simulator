@@ -46,12 +46,11 @@ class Integer32ValueParser : public ValueParser
     debugLog(NGB_VALUE_PARSER,
              "Integer32ValueParser::parseRawToApp enter");
     int i = 0;
-    int size = 0;
     len = 0;
     for (; i < getLength(); i++) {
-      size = sprintf((char*)app, "%d",
+      sprintf((char*)app, "%d",
                     *((int*)(valueStr_ + i * sizeof(int))));
-      len += size;
+      len += sizeof(int);
     }
     return true;
   }

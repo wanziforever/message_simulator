@@ -80,16 +80,14 @@ bool RunItem::sendMessage()
     debugLog(NGB_RUN_ITEM, "RunItem::sendMessage, fail to init message");
     return false;
   }
-  msg.print();
   int len = msg.parseAppToRaw((char*)g_buf);
-  msg.print();
-  char *raw_readable = new char[len * 2 + 1];
-  // sendto(buf);
-  Utils::binaryToAscii(g_buf, len, raw_readable);
-  raw_readable[len*2] = '\0';
-  debugLog(NGB_RUN_ITEM,
-           "RunItem::sendMessage raw data is %s", raw_readable);
-  delete[] raw_readable;
+  // char *raw_readable = new char[len * 2 + 1];
+  // // sendto(buf);
+  // Utils::binaryToAscii(g_buf, len, raw_readable);
+  // raw_readable[len*2] = '\0';
+  // debugLog(NGB_RUN_ITEM,
+  //          "RunItem::sendMessage raw data is %s", raw_readable);
+  // delete[] raw_readable;
   debugLog(NGB_RUN_ITEM, "RunItem::sendMessage exit...");
   return true;
 }
@@ -100,7 +98,6 @@ bool RunItem::receiveMessage()
   Message msg;
   msg.init();
   int len = msg.parseRawToApp((char*)g_buf);
-  msg.print();
   debugLog(NGB_RUN_ITEM, "RunItem::receiveMessage exit...");
   return true;
 }

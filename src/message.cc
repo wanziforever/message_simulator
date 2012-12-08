@@ -114,7 +114,6 @@ int Message::parseAppToRaw(char *raw)
   int hdrLen = parseHdrAppToRaw(p);
   p = p + hdrLen;
   int bodyLen = parseBodyAppToRaw(p);
-
   return hdrLen + bodyLen;
 }
 

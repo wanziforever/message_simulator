@@ -140,7 +140,7 @@ public:
 
   // get the number of avps for the command
   int getNumOfAvp() {
-    return size_;
+    return numOfAvp_;
   }
   Avp   *avps_;
   int    size_;

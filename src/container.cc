@@ -78,13 +78,13 @@ bool AvpEntry::parseAppToRaw(char *raw, int &len)
     vp->setLength(getLength());
     vp->parseAppToRaw((void *)raw, size);
     len += size;
-    char *raw_readable = new char[size * 2 + 1];
-    int realLen = Utils::binaryToAscii(raw, size, raw_readable);
-    raw_readable[size*2] = '\0';
-    debugLog(NGB_RUN_ITEM,
-             "RunItem::sendMessage raw data(%d/%d) is %s",
-             realLen, size, raw_readable);
-    delete[] raw_readable;
+    // char *raw_readable = new char[size * 2 + 1];
+    // int realLen = Utils::binaryToAscii(raw, size, raw_readable);
+    // raw_readable[size*2] = '\0';
+    // debugLog(NGB_RUN_ITEM,
+    //          "RunItem::sendMessage raw data(%d/%d) is %s",
+    //          realLen, size, raw_readable);
+    // delete[] raw_readable;
   }
   delete vp;
   return true;
@@ -95,16 +95,24 @@ bool AvpEntry::parseRawToApp(char *raw, int &len)
   debugLog(NGB_CONTAINER, "AvpEntry::parseRawToApp enter...");
   AvpType *avpt;
   AvpTypeList al;
-  char value[256] = {0};
+  char finalValue[1024] = {0};
+  char valueOnce[128] = {0};
   if ((avpt = al.search(getType().c_str())) == NULL) {
     debugLog(NGB_CONTAINER, "AvpEntry::parseRawToApp unkown avp type");
     return false;;
   }
   ValueParser *vp = createValueParser(avpt->getType());
-  vp->setValue(raw, VALUE_IS_RAW);
-  vp->setLength(getLength());
-  vp->parseRawToApp(value, len);
-  setValue(std::string(value));
+  int i = 0;
+  int size = 0;
+  len = 0;
+  for (; i < getQuantity(); i++) {
+    vp->setValue(raw + size, VALUE_IS_RAW);
+    vp->setLength(getLength());
+    vp->parseRawToApp(valueOnce, size);
+    len += size;
+    strcat(finalValue, valueOnce);
+  }
+  setValue(std::string(finalValue));
   debugLog(NGB_CONTAINER, "AvpEntry::parseRawToApp get value %s for avp %s",
            getValue().c_str(), getName().c_str());
   delete vp;
@@ -126,6 +134,7 @@ bool Container::addAvp(std::string name, std::string type, int len,
   avp_r.setName(name);
   avp_r.setType(type);
   avp_r.setLength(len);
+  avp_r.setQuantity(quantity);
   avpList_.push_back(avp_r);
 }
 
@@ -240,8 +249,8 @@ void Container::print()
     return;
   }
   int num = avpList_.size();
-  char buf[1024] = {0};
-  char line[256] = {0};
+  char buf[100*1024] = {0};
+  char line[1024] = {0};
   // set the title
   sprintf(buf, "there are %d avp items\n", num);
   for (std::vector<AvpEntry>::iterator it = avpList_.begin();

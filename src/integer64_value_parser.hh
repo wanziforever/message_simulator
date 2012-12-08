@@ -43,12 +43,11 @@ class Integer64ValueParser : public ValueParser
     debugLog(NGB_VALUE_PARSER,
              "Integer64ValueParser::parseRawToApp enter");
     int i = 0;
-    int size = 0;
     len = 0;
     for (; i < getLength(); i++) {
-      size = sprintf((char*)app, "%lld",
+      sprintf((char*)app, "%lld",
                     *((long long*)(valueStr_ + i * sizeof(long long))));
-      len += size;
+      len += sizeof(long long);
     }
     return true;
   }
