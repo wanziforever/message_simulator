@@ -42,17 +42,16 @@ public:
   const char* getValue() { return valueStr_; }
   int getFlag() { return flag_; }
 
-  int getQuantity() { return quantity_; }
-  void setQuantity(int quantity) { quantity_ = quantity; }
-
+  int getLength() { return len_; }
+  void setLength(int len) { len_ = len; }
+  
 protected:
   const char *valueStr_;
   // to tell the value stored is raw or text
-  // 1 for text,
-  // 0 for raw
+  // 1 for VALUE_IS_TEXT
+  // 0 for VALUE_IS_RAW
   bool flag_;
   int len_;
-  int quantity_;
 };
 
 #endif

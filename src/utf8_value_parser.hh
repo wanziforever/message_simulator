@@ -39,8 +39,8 @@ public:
     debugLog(NGB_VALUE_PARSER, "Utf8ValueParser::parseAppToRaw enter");
     if (flag_ == VALUE_IS_RAW) // already raw
       return true;
-    strncpy((char *)raw, valueStr_, getQuantity());
-    len = getQuantity();
+    strncpy((char *)raw, valueStr_, getLength());
+    len = getLength();
     return true;
   }
   // parse the input raw data to human readable value string
@@ -48,8 +48,8 @@ public:
     debugLog(NGB_VALUE_PARSER, "Utf8ValueParser::parseRawToApp enter");
     if (flag_ == VALUE_IS_TEXT) // already text
       return true;
-    strncpy((char *)app, valueStr_, getQuantity());
-    len = getQuantity(); // == 0 ? getQuantity():1;
+    strncpy((char *)app, valueStr_, getLength());
+    len = getLength();
     return true;
   }
 };

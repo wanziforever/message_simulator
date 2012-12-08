@@ -64,16 +64,28 @@ bool AvpEntry::parseAppToRaw(char *raw, int &len)
     return false;;
   }
   ValueParser *vp = createValueParser(avpt->getType());
-  vp->setValue(getValue().c_str(), VALUE_IS_TEXT);
-  vp->setQuantity(getLength());
-  vp->parseAppToRaw((void *)raw, len);
-  char *raw_readable = new char[len * 2 + 1];
-  int realLen = Utils::binaryToAscii(raw, len, raw_readable);
-  raw_readable[len*2] = '\0';
-  debugLog(NGB_RUN_ITEM,
-           "RunItem::sendMessage raw data(%d/%d) is %s",
-           realLen, len, raw_readable);
-  delete[] raw_readable;
+  // no consideration for quantity==0, since it already converted
+  // to 1 in its setQuantity() method.
+  // TODO: support multiple quantites, this require that parsing
+  // provisioned to seperate the value to satisfy quantity requirement
+  int i = 0;
+  int size = 0;
+  len = 0;
+  for (; i < getQuantity(); i++) {
+    // TODO; the getValue should be enhanced to return one value for
+    // one quantity, some format of value should be designed
+    vp->setValue(getValue().c_str(), VALUE_IS_TEXT);
+    vp->setLength(getLength());
+    vp->parseAppToRaw((void *)raw, size);
+    len += size;
+    char *raw_readable = new char[size * 2 + 1];
+    int realLen = Utils::binaryToAscii(raw, size, raw_readable);
+    raw_readable[size*2] = '\0';
+    debugLog(NGB_RUN_ITEM,
+             "RunItem::sendMessage raw data(%d/%d) is %s",
+             realLen, size, raw_readable);
+    delete[] raw_readable;
+  }
   delete vp;
   return true;
 }
@@ -90,7 +102,7 @@ bool AvpEntry::parseRawToApp(char *raw, int &len)
   }
   ValueParser *vp = createValueParser(avpt->getType());
   vp->setValue(raw, VALUE_IS_RAW);
-  vp->setQuantity(getLength());
+  vp->setLength(getLength());
   vp->parseRawToApp(value, len);
   setValue(std::string(value));
   debugLog(NGB_CONTAINER, "AvpEntry::parseRawToApp get value %s for avp %s",

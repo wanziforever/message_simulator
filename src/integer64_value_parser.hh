@@ -24,11 +24,33 @@ class Integer64ValueParser : public ValueParser
   bool parseAppToRaw(void *raw, int &len) {
     debugLog(NGB_VALUE_PARSER,
              "Integer64ValueParser::parseAppToRaw enter");
-
+    if (!strlen(valueStr_)) {
+      debugLog(NGB_VALUE_PARSER, "Integer64ValueParser::parseAppToRaw "
+        "intput value is not provisioned, use NULL instead");
+      memset(raw, 0, sizeof(long long) * getLength());
+      len = getLength() * sizeof(long long);
+      return true;
+    }
+    int i = 0;
+    for (; i < getLength(); i++) {
+      sscanf(valueStr_ + i * sizeof(long long), "%lld", (long long *)raw);
+      len += sizeof(long long);
+    }
+    return true;
   }
-  bool parseRawToApp(void *raw, int &len) {
+  
+  bool parseRawToApp(void *app, int &len) {
     debugLog(NGB_VALUE_PARSER,
              "Integer64ValueParser::parseRawToApp enter");
+    int i = 0;
+    int size = 0;
+    len = 0;
+    for (; i < getLength(); i++) {
+      size = sprintf((char*)app, "%lld",
+                    *((long long*)(valueStr_ + i * sizeof(long long))));
+      len += size;
+    }
+    return true;
   }
 };
 

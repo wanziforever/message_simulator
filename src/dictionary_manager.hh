@@ -30,14 +30,16 @@ class Avp
 public:
   // constructor
   Avp() : name_(std::string("")), type_(std::string("")),
-                code_(0), length_(0) {}
+          code_(0), length_(0), quantity_(0) {}
   Avp(std::string name, int code)
-    :name_(name), code_(code) {}
+    :name_(name), code_(code), type_(std::string("")),
+     length_(0), quantity_(0) {}
   Avp(const Avp &avp) {
     name_ = avp.name_;
     type_ = avp.type_;
     code_ = avp.code_;
     length_ = avp.length_;
+    quantity_ = avp.quantity_;
   }
   ~Avp() {}
 

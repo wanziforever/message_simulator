@@ -21,7 +21,8 @@
 class AvpEntry
 {
 public:
-  AvpEntry() : avpCode_(0), length_(0) {}
+  AvpEntry() : avpCode_(0), length_(0), value_(""), avpName_(""),
+               quantity_(0), type_(""){}
   AvpEntry(const AvpEntry &avp) {
     avpName_ = avp.avpName_;
     value_ = avp.value_;
@@ -34,8 +35,10 @@ public:
   bool parseRawToApp(char *raw, int &len);
   // getter and setter method
   std::string getName() { return avpName_; }
-    std::string getValue() { return value_; }
-    std::string getType() { return type_; }
+  // TODO; the getValue should be enhanced to return one value for
+  // one quantity, some format of value should be designed
+  std::string getValue() { return value_; }
+  std::string getType() { return type_; }
   int getCode() { return avpCode_; }
   int getLength() { return length_; }
   int getQuantity() { return quantity_; }
@@ -44,8 +47,12 @@ public:
   void setValue(std::string val) { value_ = val; }
   void setType(std::string tp) { type_ = tp; }
   void setCode(int code) { avpCode_ = code; }
-  void setLength(int len) { length_ = len; }
-  void setQuantity(int quantity) { quantity_ = quantity ;}
+  // if the length is configured to 0, will convert it to 1
+  void setLength(int len) {
+    length_ = (len == 0) ? 1 : len; }
+  // if the quantity is configured to 0, will convert it to 1
+  void setQuantity(int quantity) {
+    quantity_ = (quantity == 0) ? 1 : quantity;}
 private:
   std::string avpName_;
   std::string value_;

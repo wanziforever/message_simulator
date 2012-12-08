@@ -20,6 +20,7 @@
 #include "value_parser.hh"
 #include "log.hh"
 
+// normally the octect string should convert UTF-8 to Hex binary
 // currently no convertion implementation for Octect type string
 // the raw memory should be allocated before
 // NOTE:
@@ -35,8 +36,8 @@ class OctectValueParser : public ValueParser
              "OctectValueParser::parseAppToRaw enter");
     if (flag_ == VALUE_IS_RAW) // already raw
       return true;
-    strncpy((char*)raw, valueStr_, len_);
-    len = len_;
+    strncpy((char*)raw, valueStr_, getLength());
+    len = getLength();
     return true;
   }
 
@@ -45,8 +46,8 @@ class OctectValueParser : public ValueParser
              "OctectValueParser::parseRawToApp enter");
     if (flag_ == VALUE_IS_TEXT) // already text
       return true;
-    strncpy((char*)app, valueStr_, len_);
-    len = len_;
+    strncpy((char*)app, valueStr_, getLength());
+    len = getLength();
     return true;
   }
 };

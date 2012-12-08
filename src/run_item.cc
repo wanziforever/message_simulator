@@ -82,6 +82,7 @@ bool RunItem::sendMessage()
   }
   msg.print();
   int len = msg.parseAppToRaw((char*)g_buf);
+  msg.print();
   char *raw_readable = new char[len * 2 + 1];
   // sendto(buf);
   Utils::binaryToAscii(g_buf, len, raw_readable);

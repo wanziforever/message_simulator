@@ -30,17 +30,29 @@ class Integer32ValueParser : public ValueParser
       // if the value string is not provisioned, use NULL to fill instead
       debugLog(NGB_VALUE_PARSER, "Integer32ValueParser::parseAppToRaw "
                "input value is not provisioned, use NULL instead");
-      memset(raw, 0, sizeof(int)*getQuantity());
+      memset(raw, 0, sizeof(int)*getLength());
+      len = getLength() * sizeof(int);
       return true;
     }
-    sscanf(valueStr_, "%d", (int*)raw);
-    len = 4;
+    int i = 0;
+    for (; i < getLength(); i++) {
+      sscanf(valueStr_ + i * sizeof(int), "%d", (int*)raw);
+      len += sizeof(int);
+    }
     return true;
   }
 
   bool parseRawToApp(void *app, int &len) {
-    debugLog(NGB_VALUE_PARSER, "Integer32ValueParser::parseRawToApp enter");
-    len = sprintf((char*)app, "%d", *((int*)valueStr_));
+    debugLog(NGB_VALUE_PARSER,
+             "Integer32ValueParser::parseRawToApp enter");
+    int i = 0;
+    int size = 0;
+    len = 0;
+    for (; i < getLength(); i++) {
+      size = sprintf((char*)app, "%d",
+                    *((int*)(valueStr_ + i * sizeof(int))));
+      len += size;
+    }
     return true;
   }
 };
