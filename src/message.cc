@@ -56,6 +56,10 @@ bool Message::createAvpsWithNameAndType()
   return avpContainer_.createAvpsFromDictionary(command_);
 }
 
+void Message::setUdpHeader(udp_header h) {
+  strncpy((char *)&hdr_, (char *)&h, sizeof(udp_header));
+}
+
 bool Message::readMsgFile()
 {
   debugLog(NGB_MESSAGE, "Message::readMsgFile enter...");

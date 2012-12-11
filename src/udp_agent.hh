@@ -21,6 +21,8 @@
 #define NGB_UDP_AGENT_H__
 
 #include <iostream>
+#include <queue>
+#include "message.hh"
 
 class UdpAgent
 {
@@ -30,8 +32,14 @@ public:
   bool init(int localPort);
   bool sendMsg(const char *ip, int port, char *msg, int len);
   int getSocket() { return socket_; }
+  int getQueueSize();
 private:
+  bool startReceiver();
+  bool registerReceiver(int fd);
+  void* receiverThreadFunc();
   int socket_;
+  int epollfd_;
+  std::queue<Message> recMsgQueue_;
 };
 
 #endif

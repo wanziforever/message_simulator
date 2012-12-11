@@ -25,7 +25,7 @@
 #define MAX_PATH_SIZE 256
 #define PRIVATE_SIZE 128
 #define MD5_CHECKSUM_LENGTH 16
-#define MAX_MESSAGE_SIZE 2048
+#define COMMON_MSG_SIZE 1500
 
 struct dfs_input_chunk {
   char file_path[MAX_PATH_SIZE];
@@ -50,12 +50,12 @@ struct dfs_msg
   struct dfs_input_chunk inchk;
 };
 
-struct udp_header {
+typedef struct udp_header {
   unsigned char ver;
   unsigned char padding[7];
   unsigned long int seq;
   unsigned char reserved[8];
-};
+} udp_header;
 
 
 typedef struct mhandle {
@@ -77,7 +77,8 @@ public:
   int parseAppToRaw(char *output);
   void print();
   bool readMsgFile();
-
+  char* getRawPtr() { return (char*)raw_; }
+  void setUdpHeader(udp_header h);
 private:
   int parseHdrRawToApp(char *output);
   int parseHdrAppToRaw(char *output);
@@ -89,7 +90,7 @@ private:
   udp_header hdr_;
   // Container requestContainer_;
   Container avpContainer_;
-  char raw_[MAX_MESSAGE_SIZE];
+  char raw_[COMMON_MSG_SIZE];
   std::string path_;
 };
   

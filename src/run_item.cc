@@ -22,7 +22,7 @@
 #include "utils.hh"
 #include "message.hh"
 
-char g_buf[MAX_MESSAGE_SIZE]= {0};
+char g_buf[COMMON_MSG_SIZE]= {0};
 
 RunItem::RunItem(std::string line)
 {
