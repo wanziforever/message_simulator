@@ -163,3 +163,11 @@ bool UdpAgent::registerReceiver(int fd)
   // pass
   return true;
 }
+
+Message UdpAgent::receive()
+{
+  if (recMsgQueue_.empty()) {
+    return recMsgQueue_.front();
+  }
+  return *(Message *)0;
+}

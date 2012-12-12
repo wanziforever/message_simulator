@@ -33,6 +33,7 @@ public:
   bool sendMsg(const char *ip, int port, char *msg, int len);
   int getSocket() { return socket_; }
   int getQueueSize();
+  Message receive();
 private:
   bool startReceiver();
   bool registerReceiver(int fd);

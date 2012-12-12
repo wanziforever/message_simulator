@@ -40,15 +40,13 @@ int main(int argc, char *argv[])
   debugLog(NGB_MAIN, "current working directory(%s),\n"
            " task(%s),"
            " dest_address(%s),"
-           " dest_port(%s)",
+           " dest_port",
            ConfigManager::getCWD().c_str(),
            ConfigManager::getTask().c_str(),
            ConfigManager::getDestAddress().c_str(),
-           ConfigManager::getDestPort().c_str());
+           ConfigManager::getDestPort());
   g_udp_agent = new UdpAgent();
-  int localPort = 0;
-  sscanf(ConfigManager::getLocalPort().c_str(), "%d", &localPort);
-  g_udp_agent->init(localPort);
+  g_udp_agent->init(ConfigManager::getLocalPort());
   dictMgr = new DictionaryManager;
   dictMgr->init("dictionary.xml");
   Task *task = new Task(ConfigManager::getTask());

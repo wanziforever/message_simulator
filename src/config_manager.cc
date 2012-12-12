@@ -16,6 +16,7 @@
 #include <fstream>
 #include <unistd.h>
 #include <sys/param.h>
+#include <sstream>
 #include "log.hh"
 #include "config_manager.hh"
 #include "utils.hh"
@@ -86,14 +87,18 @@ string ConfigManager::getDestAddress()
   return getValueByName("dest_address");
 }
 
-string ConfigManager::getDestPort()
+int ConfigManager::getDestPort()
 {
-  return getValueByName("dest_port");
+  int port;
+  stringstream(getValueByName("dest_port")) >> port;
+  return port;
 }
 
-string ConfigManager::getLocalPort()
+int ConfigManager::getLocalPort()
 {
-  return getValueByName("local_port");
+  int port;
+  stringstream( getValueByName("local_port")) >> port;
+  return port;
 }
 
 string ConfigManager::getCWD()

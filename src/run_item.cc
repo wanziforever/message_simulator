@@ -16,13 +16,16 @@
 #include <sstream>
 #include <string.h>
 #include <stdio.h>
+#include <unistd.h>
 #include "log.hh"
 #include "run_item.hh"
 #include "config_manager.hh"
 #include "utils.hh"
 #include "message.hh"
+#include "udp_agent.hh"
 
 char g_buf[COMMON_MSG_SIZE]= {0};
+extern UdpAgent *g_udp_agent;
 
 RunItem::RunItem(std::string line)
 {
@@ -88,6 +91,10 @@ bool RunItem::sendMessage()
   // debugLog(NGB_RUN_ITEM,
   //          "RunItem::sendMessage raw data is %s", raw_readable);
   // delete[] raw_readable;
+  g_udp_agent->sendMsg(ConfigManager::getDestAddress().c_str(),
+                       ConfigManager::getDestPort(),
+                       g_buf,
+                       len);
   debugLog(NGB_RUN_ITEM, "RunItem::sendMessage exit...");
   return true;
 }
@@ -95,9 +102,16 @@ bool RunItem::sendMessage()
 bool RunItem::receiveMessage()
 {
   debugLog(NGB_RUN_ITEM, "RunItem::receiveMessage enter...");
-  Message msg;
-  msg.init();
-  int len = msg.parseRawToApp((char*)g_buf);
+  // Message msg;
+  // msg.init();
+  // int len = msg.parseRawToApp((char*)g_buf);
+  while (1) {
+    if (g_udp_agent->getQueueSize() == 0) {
+      usleep(20000);
+      debugLog(NGB_RUN_ITEM, "RunItem::receiveMessage waiting for message");
+    }
+  }
+  Message msg = g_udp_agent->receive();
   debugLog(NGB_RUN_ITEM, "RunItem::receiveMessage exit...");
   return true;
 }

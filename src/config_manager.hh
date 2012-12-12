@@ -42,8 +42,8 @@ public:
   // request definition for main function
   static std::string getTask();
   static std::string getDestAddress();
-  static std::string getDestPort();
-  static std::string getLocalPort();
+  static int getDestPort();
+  static int getLocalPort();
 };
 
 #endif
