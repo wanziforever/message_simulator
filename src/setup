@@ -6,6 +6,10 @@ src_dir=$current_dir # current is the src directory
 bin_dir=$current_dir/../bin
 lib_dir=$current_dir/../lib
 
+# make the library and binary directories
+mkdir -p $bin_dir
+mkdir -p $lib_dir
+
 # link some configuration files to bin directory
 ln -s $src_dir/dictionary.xml $bin_dir/dictionary.xml
 ln -s $src_dir/input_file.msg $bin_dir/input_file.msg
@@ -13,7 +17,9 @@ ln -s $src_dir/config.conf $bin_dir/config.conf
 ln -s $src_dir/task.t $bin_dir/task.t
 ln -s $src_dir/trace_flag $bin_dir/trace_flag
 
-ln -s $lib_dir/libxerces-c.so $bin_dir/libxerces-c.so.28
+# currently only consider the ubuntu 32bit distribution
+ln -s $lib_dir/ubuntu/32bit/libxerces-c.so $bin_dir/libxerces-c.so.28
+ln -s $lib_dir/ubuntu/32bit/libxerces-c.so $lib_dir/libxerces-c.so
 
 # generate the enironment variables scripts to bin
 echo "#!/bin/bash" > $bin_dir/set
