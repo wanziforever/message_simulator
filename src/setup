@@ -18,8 +18,8 @@ ln -s $src_dir/task.t $bin_dir/task.t
 ln -s $src_dir/trace_flag $bin_dir/trace_flag
 
 # currently only consider the ubuntu 32bit distribution
-ln -s $lib_dir/ubuntu/32bit/libxerces-c.so $bin_dir/libxerces-c.so.28
-ln -s $lib_dir/ubuntu/32bit/libxerces-c.so $lib_dir/libxerces-c.so
+ln -s $src_dir/ubuntu/32bit/libxerces-c.so $bin_dir/libxerces-c.so.28
+ln -s $src_dir/ubuntu/32bit/libxerces-c.so $lib_dir/libxerces-c.so
 
 # generate the enironment variables scripts to bin
 echo "#!/bin/bash" > $bin_dir/set
