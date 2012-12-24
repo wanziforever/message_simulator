@@ -75,6 +75,11 @@ bool RunItem::setupRunItems(std::string line)
   debugLog(NGB_RUN_ITEM, "RunItem::setupRunItems exit...");
 }
 
+// the receiver side only accept such length of message, if the real
+// message size is less, use 0 to fill the left space, logic couple
+// to receiver system
+#define FIX_MESSAGE_CONTENT_SIZE 1408
+
 bool RunItem::sendMessage()
 {
   debugLog(NGB_RUN_ITEM, "RunItem::sendMessage enter...");
@@ -83,6 +88,8 @@ bool RunItem::sendMessage()
     debugLog(NGB_RUN_ITEM, "RunItem::sendMessage, fail to init message");
     return false;
   }
+
+  memset(g_buf, 0, COMMON_MSG_SIZE);
   int len = msg.parseAppToRaw((char*)g_buf);
   // char *raw_readable = new char[len * 2 + 1];
   // // sendto(buf);
@@ -91,14 +98,19 @@ bool RunItem::sendMessage()
   // debugLog(NGB_RUN_ITEM,
   //          "RunItem::sendMessage raw data is %s", raw_readable);
   // delete[] raw_readable;
-  while (1) {
+
+  // no matter what is the real size of the message to be sent, just set
+  // fixed message length which is a logic couple from receiver system
+  
+  len = FIX_MESSAGE_CONTENT_SIZE;
+//  while (1) {
     usleep(500000);
     g_udp_agent->sendMsg(ConfigManager::getDestAddress().c_str(),
                          ConfigManager::getDestPort(),
                          g_buf,
                          len);
     debugLog(NGB_RUN_ITEM, "RunItem::sendMessage sending message");
-  }
+    //}
   debugLog(NGB_RUN_ITEM, "RunItem::sendMessage exit...");
   return true;
 }

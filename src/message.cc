@@ -15,9 +15,13 @@
 #include <stdint.h>
 #include <string.h>
 #include <fstream>
+#include <sstream>
 #include <sys/param.h>
 #include "message.hh"
 #include "log.hh"
+#include "dictionary_manager.hh"
+
+extern DictionaryManager *dictMgr;
 
 #define SEPARATOR "=:"
 #define GET_NAME_VALUE_PAIR(entry, name, value) \
@@ -56,9 +60,9 @@ bool Message::createAvpsWithNameAndType()
   return avpContainer_.createAvpsFromDictionary(command_);
 }
 
-void Message::setUdpHeader(udp_header h) {
-  strncpy((char *)&hdr_, (char *)&h, sizeof(udp_header));
-}
+//void Message::setUdpHeader(udp_header h) {
+//  strncpy((char *)&hdr_, (char *)&h, sizeof(udp_header));
+//}
 
 bool Message::readMsgFile()
 {
@@ -86,6 +90,7 @@ bool Message::readMsgFile()
     return false;
   }
   command_ = value;
+  std::stringstream(dictMgr->getCommandCode(command_)) >> commandCode_;
   // read the avps for each line, and add it to request container
   while (msgFile.getline(line, 512)) {
     entry = std::string(line);
@@ -116,6 +121,7 @@ int Message::parseAppToRaw(char *raw)
   }
   char *p = raw;
   int hdrLen = parseHdrAppToRaw(p);
+  debugLog(NGB_MESSAGE, "Message::parseAppToRaw hdrLen is %d", hdrLen);
   p = p + hdrLen;
   int bodyLen = parseBodyAppToRaw(p);
   return hdrLen + bodyLen;
@@ -140,7 +146,10 @@ int Message::parseHdrRawToApp(char *raw)
 int Message::parseHdrAppToRaw(char *raw)
 {
   debugLog(NGB_MESSAGE, "Message::parseHdrAppToRaw enter...");
-  return 0;
+  memset(&hdr_, 0, sizeof(struct dfs_msg_header));
+  hdr_.op = commandCode_;
+  memcpy(raw, &hdr_, sizeof(dfs_msg_header));
+  return sizeof(dfs_msg_header);
 }
 
 int Message::parseBodyRawToApp(char *raw)

@@ -205,6 +205,48 @@ bool DictionaryManager::getAllCommands(Command *output)
   return true;
 }
 
+std::string DictionaryManager::getCommandCode(std::string cmdName)
+{
+  debugLog(NGB_DICT_MGR, "DictionaryManager::getCommandCode enter");
+  DOMDocument *doc = parser_->getDocument();
+  DOMNodeList *avpNodeList = doc->getElementsByTagName(g_xmlch_command);
+  std::string eachName;
+  DOMNode *n = 0;
+  for (int i = 0; i < avpNodeList->getLength(); i++) {
+    n = avpNodeList->item(i);
+    eachName = getAttributeValue(n, g_xmlch_attribute_name);
+    if (eachName == cmdName) {
+      return getAttributeValue(n, g_xmlch_attribute_code);
+    }
+  }
+  debugLog(NGB_DICT_MGR,
+           "DictionaryManager::getCommandCode not found command(%s)",
+           cmdName.c_str());
+  // TODO: how to design return value to for the not found case
+  return std::string("0"); 
+}
+
+std::string DictionaryManager::getCommandName(std::string cmdCode)
+{
+  debugLog(NGB_DICT_MGR, "DictionaryManager::getCommandName enter");
+  DOMDocument *doc = parser_->getDocument();
+  DOMNodeList *avpNodeList = doc->getElementsByTagName(g_xmlch_command);
+  std::string eachCode;
+  DOMNode *n = 0;
+  for (int i = 0; i < avpNodeList->getLength(); i++) {
+    n = avpNodeList->item(i);
+    eachCode = getAttributeValue(n, g_xmlch_attribute_code);
+    if (eachCode == cmdCode) {
+      return getAttributeValue(n, g_xmlch_attribute_name);
+    }
+  }
+  debugLog(NGB_DICT_MGR,
+           "DictionaryManager::getCommandName not found command code(%s)",
+           cmdCode.c_str());
+  // TODO: how to design return value to for the not found case
+  return std::string("0"); 
+}
+
 bool DictionaryManager::getOneCommand(const DOMNode *n, Command *output)
 {
   debugLog(NGB_DICT_MGR, "DictionaryManager::getOneCommand enter...");

@@ -64,17 +64,17 @@ bool UdpAgent::init(int localPort)
   startReceiver();
 }
 
-#define NGB_CREATE_MSG_HEADER(handle, ip, port) \
-  bzero(&handle, sizeof(handle));               \
-  handle.src.sin_family = AF_INET;              \
-  handle.src.sin_addr.s_addr = inet_addr(ip);   \
-  handle.src.sin_port = htons(port);            \
-  handle.hdr.seq = 12;                          \
-  handle.hdr.ver = 0;
+#define NGB_CREATE_MSG_HEADER(handle, ip, port)               \
+  bzero(&handle, sizeof(handle));                             \
+  handle.src.sin_family = AF_INET;                            \
+  handle.src.sin_addr.s_addr = inet_addr(ip);                 \
+  handle.src.sin_port = htons(port);                          \
+  handle.hdr.seq = 12;                                        \
+  handle.hdr.ver = 0; 
 
 #define INIT_IOVEC(hdr, iov, buf, buf_len) \
   iov[0].iov_base = &hdr;                  \
-  iov[0].iov_len = sizeof(hdr);     \
+  iov[0].iov_len = sizeof(hdr);            \
   iov[1].iov_base = buf;                   \
   iov[1].iov_len = buf_len;
 
@@ -97,6 +97,8 @@ bool UdpAgent::sendMsg(const char *ip, int port, char *msg, int len)
   NGB_CREATE_MSG_HEADER(handle, ip, port);
   struct iovec iov[2];
   INIT_IOVEC(handle.hdr, iov, msg, len);
+
+  debugLog(NGB_UDP_AGENT, "UdpAgent::sendMsg the hdr size is %d", sizeof(handle.hdr));
   struct msghdr hdr = {0};
   INIT_IOVEC_MSG(hdr, iov, handle.src);
 
@@ -111,8 +113,9 @@ bool UdpAgent::sendMsg(const char *ip, int port, char *msg, int len)
   return true;
 }
 
-// there is no consideration about the performance here, whole received message
-// will be put in the queue, there is also no race condition consideration later
+// there is no consideration about the performance here, whole received
+// message will be put in the queue, there is also no race condition
+// consideration later
 void* UdpAgent::receiverThreadFunc()
 {
   debugLog(NGB_UDP_AGENT, "UdpAgent::receiverThreadFunc enter");
@@ -132,7 +135,7 @@ void* UdpAgent::receiverThreadFunc()
       continue;
     }
     // put the message to message queue
-    msg.setUdpHeader(udpheader);
+    // msg.setUdpHeader(udpheader);
     recMsgQueue_.push(msg);
   }
 }

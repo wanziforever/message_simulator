@@ -175,6 +175,8 @@ public:
   // get the number of avp definitions from the XML document
   int getNumOfAvp();
   bool getCommandByName(std::string name, Command *output);
+  std::string getCommandName(std::string cmdCode);
+  std::string getCommandCode(std::string cmdName);
 
 private:
   bool getOneCommand(const xercesc::DOMNode *n, Command *output);

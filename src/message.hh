@@ -50,10 +50,18 @@ struct dfs_msg
   struct dfs_input_chunk inchk;
 };
 
+struct dfs_msg_header
+{
+  short int ver;
+  short int op;
+  short int reply;
+  short int errcode;
+};
+
 typedef struct udp_header {
   unsigned char ver;
   unsigned char padding[7];
-  unsigned long int seq;
+  unsigned long long seq;
   unsigned char reserved[8];
 } udp_header;
 
@@ -78,7 +86,7 @@ public:
   void print();
   bool readMsgFile();
   char* getRawPtr() { return (char*)raw_; }
-  void setUdpHeader(udp_header h);
+  // void setUdpHeader(udp_header h);
 private:
   int parseHdrRawToApp(char *output);
   int parseHdrAppToRaw(char *output);
@@ -87,8 +95,9 @@ private:
   bool fillAvpsWithTypes();
   bool createAvpsWithNameAndType();
   std::string command_;
-  udp_header hdr_;
-  // Container requestContainer_;
+  short int commandCode_;
+  // udp_header hdr_;
+  struct dfs_msg_header hdr_;
   Container avpContainer_;
   char raw_[COMMON_MSG_SIZE];
   std::string path_;
