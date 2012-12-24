@@ -56,7 +56,6 @@ bool Message::fillAvpsWithTypes()
 
 bool Message::createAvpsWithNameAndType()
 {
-  command_ = "DFS_INPUT_CHUNK";
   return avpContainer_.createAvpsFromDictionary(command_);
 }
 
@@ -90,6 +89,7 @@ bool Message::readMsgFile()
     return false;
   }
   command_ = value;
+  // get and set the command code from dictionary
   std::stringstream(dictMgr->getCommandCode(command_)) >> commandCode_;
   // read the avps for each line, and add it to request container
   while (msgFile.getline(line, 512)) {
@@ -140,7 +140,21 @@ int Message::parseRawToApp(char *raw)
 int Message::parseHdrRawToApp(char *raw)
 {
   debugLog(NGB_MESSAGE, "Message::parseHdrRawToApp enter...");
-  return 0;
+  memset(&hdr_, 0, sizeof(struct dfs_msg_header));
+  memcpy(&hdr_, raw, sizeof(dfs_msg_header));
+  commandCode_ = hdr_.op;
+  // code check whether it is a error message
+  if (hdr_.reply = 1) {
+    debugLog(NGB_MESSAGE,
+             "Message::parseHdrRawToApp get error message for command %d, "
+             "error code is %d", commandCode_, hdr_.errcode);
+  }
+  std::stringstream ss;
+  ss << commandCode_;
+  command_ = dictMgr->getCommandName(ss.str());
+  debugLog(NGB_MESSAGE,
+           "Message::parseHdrRawToApp get %s message", command_.c_str());
+  return sizeof(dfs_msg_header);
 }
 
 int Message::parseHdrAppToRaw(char *raw)

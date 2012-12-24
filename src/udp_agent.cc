@@ -128,6 +128,7 @@ void* UdpAgent::receiverThreadFunc()
   INIT_IOVEC_MSG(hdr, iov, src);
   while(1) {
     int r = recvmsg(socket_, &hdr, 0 /*flags*/);
+    debugLog(NGB_UDP_AGENT, "UdpAgent::receiverThreadFunc got one message");
     // need to convert the seq after receive the message?
     if (r < 1) {
       debugLog(NGB_UDP_AGENT,
@@ -167,10 +168,14 @@ bool UdpAgent::registerReceiver(int fd)
   return true;
 }
 
+// a nsync function call
 Message UdpAgent::receive()
 {
-  if (recMsgQueue_.empty()) {
-    return recMsgQueue_.front();
+  if (!recMsgQueue_.empty()) {
+    Message msg;
+    msg = recMsgQueue_.front();
+    recMsgQueue_.pop();
+    return msg;
   }
   return *(Message *)0;
 }

@@ -122,12 +122,16 @@ bool RunItem::receiveMessage()
   // msg.init();
   // int len = msg.parseRawToApp((char*)g_buf);
   while (1) {
-    if (g_udp_agent->getQueueSize() == 0) {
-      usleep(20000);
-      debugLog(NGB_RUN_ITEM, "RunItem::receiveMessage waiting for message");
+    if (g_udp_agent->getQueueSize() > 0) {
+      break;
     }
+    usleep(20000);
+    debugLog(NGB_RUN_ITEM, "RunItem::receiveMessage waiting for message");
   }
   Message msg = g_udp_agent->receive();
+  // TODO: parseRawToApp to be the self handling of the raw data buffer
+  msg.parseRawToApp(msg.getRawPtr());
+  msg.print();
   debugLog(NGB_RUN_ITEM, "RunItem::receiveMessage exit...");
   return true;
 }
