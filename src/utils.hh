@@ -80,5 +80,8 @@ std::string& trim(std::string&);
 bool isComments(std::string&, std::string comment="#");
 bool isRelativePath(const std::string&);;
 int binaryToAscii(char*, int, char*);
+std::string intToString(int number);
+int stringToInt(std::string number);
+std::string makeDuplicate(const std::string &str, int x);
 UTILS_NAMESPACE_END
 #endif

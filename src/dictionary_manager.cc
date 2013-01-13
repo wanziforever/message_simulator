@@ -19,6 +19,8 @@
 #include "dictionary_manager.hh"
 #include "DOMTreeErrorReporter.hh"
 #include "log.hh"
+#include "utils.hh"
+#include "ngb_defs.hh"
 
 using namespace xercesc;
 // when want to parse a tag, add a XMLCH type string here for convinent
@@ -27,15 +29,17 @@ using namespace xercesc;
 static const XMLCh *g_xmlch_command = NULL;
 static const XMLCh *g_xmlch_avp = NULL;
 static const XMLCh *g_xmlch_avpRule = NULL;
+static const XMLCh *g_xmlch_grouped = NULL;
 static const XMLCh *g_xmlch_attribute_name = NULL;
 static const XMLCh *g_xmlch_attribute_code = NULL;
 static const XMLCh *g_xmlch_attribute_type = NULL;
 static const XMLCh *g_xmlch_attribute_length = NULL;
 static const XMLCh *g_xmlch_attribute_quantity = NULL;
 
+
 static XercesDOMParser::ValSchemes gValScheme = XercesDOMParser::Val_Auto;
 
-bool Command::addAvp(Avp avp)
+bool Command::addAvp(Avp *avp)
 {
   if (numOfAvp_ == size_) //avp array is full
     return false;
@@ -48,32 +52,120 @@ bool Command::getAvpByIndex(int index, Avp *output) {
   assert(output);
   if(index<0 || index>=numOfAvp_)
     return false;
-  *output = avps_[index];
+  output = avps_[index];
   return true;
 }
 
 bool Command::hasAvp(std::string &findName)
 {
   int index = 0;
-  for(;index<numOfAvp_;++index) {
-    if(avps_[index].getName() == findName) {
+  for(; index<numOfAvp_; ++index) {
+    if(avps_[index]->getName() == findName) {
       return true;
     }
   }
   return false; // not found match
 }
 
-bool Command::findAvp(std::string &findName, Avp *output)
+Avp* Command::findAvp(std::string &findName)
 {
-  assert(output);
   int index = 0;
-  for(;index<numOfAvp_;++index) {
-    if(avps_[index].getName() == findName) {
-      *output = avps_[index];
-      return true;
+  for (; index < numOfAvp_; ++index) {
+    if (avps_[index]->getType() == std::string("grouped")) {
+      return ((GroupAvp*)(avps_[index]))->findAvp(findName);
+    }
+    if (avps_[index]->getName() == findName) {
+      return avps_[index];
     }
   }
-  return false;
+  return (Avp*)-1;
+}
+
+std::string Command::toString(int numOfIndent)
+{
+  debugLog(NGB_DICT_MGR, "Command::toString enter");
+  int index = 0;
+  std::string myString = "";
+  for (; index < numOfAvp_; ++index) {
+    myString += avps_[index]->toString(numOfIndent) + std::string("\n");
+  }
+  debugLog(NGB_DICT_MGR, "Command::toString exit");
+  return myString;
+}
+
+bool Command::goThroughAllAvps(std::vector<Avp*> &allAvps)
+{
+  //debugLog(NGB_DICT_MGR, "Command::goThroughAllAvps enter");
+  for (int i = 0; i< numOfAvp_; i++) {
+    avps_[i]->goThroughSelf(allAvps);
+    avps_[i]->setParent(0);
+  }
+  //debugLog(NGB_DICT_MGR, "Command::goThroughAllAvps exit");
+  return true;
+}
+
+bool Avp::goThroughSelf(std::vector<Avp*> &allAvps)
+{
+  debugLog(NGB_DICT_MGR, "Avp::goThroughSelf for %s enter, quantity = %d",
+           getName().c_str(), getQuantity());
+  for (int i = 0; i < (getQuantity() == 0 ? 1 : getQuantity()); i++) {
+    Avp *avp = new Avp((*this));
+    avp->setName(avp->getName() + Utils::intToString(i));
+    debugLog(NGB_DICT_MGR, "the parent id is %d %d",
+             getParent(), avp->getParent());
+    avp->genSignature();
+    debugLog(NGB_DICT_MGR,
+             "Avp::goThroughSelf signature for Avp %s is %s",
+             avp->getName().c_str(), avp->getSignature().c_str());
+    allAvps.push_back(avp);
+  }
+  debugLog(NGB_DICT_MGR, "Avp::goThroughSelf exit");
+  return true;
+}
+
+void Avp::setParent(GroupAvp* pGroupAvp) {
+  parent_ = pGroupAvp;
+  if (pGroupAvp != (GroupAvp*)0) {
+    deepth_ = pGroupAvp->getDeepth() + 1;
+  }
+}
+
+std::string Avp::genSignature()
+{
+  debugLog(NGB_DICT_MGR,
+           "Avp::genSignature enter for AVP %s", getName().c_str());
+  GroupAvp* p = getParent();
+  if (p) {
+    signature_ = p->getSignature() + std::string("::") + getName();
+  } else {
+    signature_ = getName();
+  }
+  debugLog(NGB_DICT_MGR,
+           "Avp::genSignature exit with signature %s",signature_.c_str());
+  return signature_;
+}
+
+bool GroupAvp::goThroughSelf(std::vector<Avp*> &allAvps)
+{
+  //debugLog(NGB_DICT_MGR, "GroupAvp::goThroughSelf enter");
+  for (int i = 0; i < (getQuantity() == 0 ? 1 : getQuantity()); i++) {
+    signature_ = genSignature() + Utils::intToString(i);
+    Avp *startGroup = new GroupAvp;
+    startGroup->setName(getName());
+    startGroup->setType("start_of_group");
+    allAvps.push_back(startGroup);
+    for (std::vector<Avp*>::iterator ite = subAvpList_.begin() ;
+         ite != subAvpList_.end(); ite++) {
+      (*ite)->setParent(this);
+      (*ite)->goThroughSelf(allAvps);
+    }
+    Avp *endGroup = new GroupAvp;
+    startGroup->setName(getName());
+    endGroup->setType("end_of_group");
+    allAvps.push_back(endGroup);
+  }
+  //debugLog(NGB_DICT_MGR, "GroupAvp::goThroughSelf exit");
+  return true;
 }
 
 // get next sibling ELEMENT_NODE type tag, usually, the getNextSibling
@@ -105,12 +197,14 @@ std::string getAvpType(DOMNode *n)
 {
   DOMNode *m = n->getFirstChild();
   m = getNextElementNode(m);
-  if (!XMLString::equals(m->getNodeName(), g_xmlch_attribute_type)) {
+  if (XMLString::equals(m->getNodeName(), g_xmlch_attribute_type)) {
+    return getAttributeValue(m, g_xmlch_attribute_name);
+  } else if (XMLString::equals(m->getNodeName(),g_xmlch_grouped)) {
+    return std::string("grouped");
+  } else {
     return NULL;
   }
-  return getAttributeValue(m, g_xmlch_attribute_name);
 }
-
 
 DictionaryManager::DictionaryManager()
 {
@@ -150,6 +244,7 @@ bool DictionaryManager::init(const std::string &dictFile)
   g_xmlch_command = XMLString::transcode("command");
   g_xmlch_avp = XMLString::transcode("avp");
   g_xmlch_avpRule = XMLString::transcode("avprule");
+  g_xmlch_grouped = XMLString::transcode("grouped");
   g_xmlch_attribute_name = XMLString::transcode("name");
   g_xmlch_attribute_code = XMLString::transcode("code");
   g_xmlch_attribute_type = XMLString::transcode("type");
@@ -244,12 +339,12 @@ std::string DictionaryManager::getCommandName(std::string cmdCode)
            "DictionaryManager::getCommandName not found command code(%s)",
            cmdCode.c_str());
   // TODO: how to design return value to for the not found case
-  return std::string("0"); 
+  return std::string(""); 
 }
 
 bool DictionaryManager::getOneCommand(const DOMNode *n, Command *output)
 {
-  debugLog(NGB_DICT_MGR, "DictionaryManager::getOneCommand enter...");
+  debugLog(NGB_DICT_MGR, "DictionaryManager::getOneCommand enter");
   assert(n && output);
   Command *command = output;
   command->setName(getAttributeValue(n, g_xmlch_attribute_name));
@@ -261,16 +356,16 @@ bool DictionaryManager::getOneCommand(const DOMNode *n, Command *output)
     if (!XMLString::equals(m->getNodeName(), g_xmlch_avpRule)) {
       continue;
     }
- 
-    Avp avp;
-    if (!getAvpByName(getAttributeValue(m, g_xmlch_attribute_name), &avp)) {
+    Avp *avp = getAvpByName(getAttributeValue(m, g_xmlch_attribute_name));
+    if (avp == (Avp*)-1) {
       debugLog(NGB_DICT_MGR,
-               "DictionaryManager::getOneCommand fail to get avp by avpName");
+               "DictionaryManager::getOneCommand fail to get avp by Name");
       return false;
     }
-    avp.setQuantity(getAttributeValue(m, g_xmlch_attribute_quantity));
+    avp->setQuantity(getAttributeValue(m, g_xmlch_attribute_quantity));
     command->addAvp(avp);
   }
+  debugLog(NGB_DICT_MGR, "DictionaryManager::getOneCommand exit");
   return true;
 }
 
@@ -297,27 +392,117 @@ bool DictionaryManager::getCommandByName(std::string name, Command *output)
   return false;
 }
 
-bool DictionaryManager::getAvpByName(const std::string &name, Avp *output)
+Avp* DictionaryManager::getAvpByName(const std::string &name)
 {
   debugLog(NGB_DICT_MGR, "DictionaryManager::getAvpByName enter...");
-  assert(output);
-  Avp *avp = output;
   DOMDocument *doc = parser_->getDocument();
   DOMNodeList *avpNodeList = doc->getElementsByTagName(g_xmlch_avp);
+  bool found = false;
+  DOMNode *n = 0;
   for (int i = 0; i < avpNodeList->getLength(); i++) {
-    DOMNode *n = avpNodeList->item(i);
-    if (getAttributeValue(n, g_xmlch_attribute_name) != name) {
-      continue;
+    n = avpNodeList->item(i);
+    if (getAttributeValue(n, g_xmlch_attribute_name) == name) {
+      found = true;
+      break;
     }
-    avp->setName(getAttributeValue(n, g_xmlch_attribute_name));
-    avp->setCode(getAttributeValue(n, g_xmlch_attribute_code));
-    avp->setLength(getAttributeValue(n, g_xmlch_attribute_length));
-    // avptype is a sub tag of the avp node, use getAvpType() to get it
-    avp->setType(getAvpType(n));
-    return true;
   }
-  debugLog(NGB_DICT_MGR,
-           "DictionaryManager::getAvpByName cannot get \"%s\"", name.c_str());
-  return false;// not found matched avp
+  if (found == false) {
+    debugLog(NGB_DICT_MGR,
+             "DictionaryManager::getAvpByName cannot get \"%s\"",
+             name.c_str());
+    return (Avp *)-1;
+  }
+
+  if (getAvpType(n) == "grouped") {
+    return parseGroupAvp(n);
+  } else {
+    return parseAvp(n);
+  }
+  debugLog(NGB_DICT_MGR, "DictionaryManager::getAvpByName error");
+  return (Avp *)-1;
 }
 
+#define SET_AVP_COMMON_ATTRIBUTE(avp, n)                                \
+  avp->setName(getAttributeValue(n, g_xmlch_attribute_name));           \
+  avp->setCode(getAttributeValue(n, g_xmlch_attribute_code));           \
+  avp->setLength(getAttributeValue(n, g_xmlch_attribute_length));       \
+  avp->setType(getAvpType(n));/*avptype is a sub tag of the avp node*/
+
+Avp* DictionaryManager::parseAvp(DOMNode *n)
+{
+  debugLog(NGB_DICT_MGR, "DictionaryManager::parseAvp %s enter",
+           getAttributeValue(n, g_xmlch_attribute_name).c_str());
+  Avp *avp = new Avp;
+  SET_AVP_COMMON_ATTRIBUTE(avp, n);
+  debugLog(NGB_DICT_MGR, "DictionaryManager::parseAvp exit");
+  return avp;
+}
+
+GroupAvp* DictionaryManager::parseGroupAvp(DOMNode *n)
+{
+  debugLog(NGB_DICT_MGR, "DictionaryManager::parseGroupAvp %s enter",
+           getAttributeValue(n, g_xmlch_attribute_name).c_str());
+  GroupAvp *gavp = new GroupAvp;
+  SET_AVP_COMMON_ATTRIBUTE(gavp, n);
+  // use twice getFirstChild before getting avprule for group avp, sincce
+  // first one is to get grouped tag, and second is to get start with
+  // avprule
+  DOMNode *m = getNextElementNode(n->getFirstChild());
+  for (m = getNextElementNode(m->getFirstChild()); m != NULL;
+       m = getNextElementNode(m)) {
+    // debugLog(NGB_DICT_MGR, "_%s__%s_", XMLString::transcode(m->getNodeName()),
+    //          getAttributeValue(m, g_xmlch_attribute_name).c_str());
+    Avp *avp = getAvpByName(getAttributeValue(m, g_xmlch_attribute_name));
+    if (avp == (Avp*)-1) {
+      debugLog(NGB_DICT_MGR,
+               "DictionaryManager::parseGroupAvp fail to get avp by Name");
+    }
+    gavp->addAvp(avp);
+  }
+  debugLog(NGB_DICT_MGR, "DictionaryManager::parseGroupAvp exit");
+  return gavp;
+}
+
+std::string Avp::toString(int numOfIndent)
+{
+  std::string myIndent = Utils::makeDuplicate(INDENT, numOfIndent);
+  std::string myString = myIndent + type_ + std::string("::") + name_ +
+    std::string("(") + Utils::intToString(length_) + std::string(":") +
+    Utils::intToString(quantity_) + std::string(":") +
+    Utils::intToString(deepth_) + std::string(") ") + signature_;
+    return myString;
+}
+
+std::string GroupAvp::toString(int numOfIndent)
+{
+  std::string myIndent = Utils::makeDuplicate(INDENT, numOfIndent);
+  std::string myString = myIndent + type_ + std::string("::") + name_ +
+    std::string("(:") + Utils::intToString(quantity_) +
+    std::string(":") + Utils::intToString(deepth_) + std::string(")\n");
+  for (std::vector<Avp*>::iterator it = subAvpList_.begin();
+       it != subAvpList_.end(); ++it) {
+    myString += (*it)->toString(numOfIndent + 1) + std::string("\n");
+  }
+  return myString;
+}
+
+Avp* GroupAvp::findAvp(std::string &findName)
+{
+  debugLog(NGB_DICT_MGR,
+           "GroupAvp::findAvp groupAvp(%s) enter", getName().c_str());
+  Avp *avp = 0;
+  for (std::vector<Avp*>::iterator ite = subAvpList_.begin();
+       ite != subAvpList_.end(); ite++) {
+    if ((*ite)->getType() == std::string("grouped")) {
+      avp = ((GroupAvp*)(*ite))->findAvp(findName);
+      if (avp != (Avp*)-1) {
+        return avp;
+      }
+    } else {
+      if ((*ite)->getName() == findName) {
+        return (Avp*)(*ite);
+      }
+    }
+  }
+  return (Avp*)-1;
+}

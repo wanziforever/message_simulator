@@ -18,61 +18,95 @@
 
 #include <vector>
 #include <iostream>
+
 class AvpEntry
 {
 public:
-  AvpEntry() : avpCode_(0), length_(0), value_(""), avpName_(""),
-               quantity_(0), type_(""){}
-  AvpEntry(const AvpEntry &avp) {
-    avpName_ = avp.avpName_;
-    value_ = avp.value_;
-    avpCode_ = avp.avpCode_;
-    length_ = avp.length_;
-    type_ = avp.type_;
-    quantity_ = avp.quantity_;
-  }
-  bool parseAppToRaw(char *raw, int &len);
-  bool parseRawToApp(char *raw, int &len);
-  // getter and setter method
-  std::string getName() { return avpName_; }
-  // TODO; the getValue should be enhanced to return one value for
-  // one quantity, some format of value should be designed
-  std::string getValue() { return value_; }
-  std::string getType() { return type_; }
-  int getCode() { return avpCode_; }
-  int getLength() { return length_; }
-  int getQuantity() { return quantity_; }
-
-  void setName(std::string name) { avpName_ = name; }
+  AvpEntry() : type_(""), value_(""), avpName_(""), avpCode_(0),
+            length_(1), quantity_(1) {} 
+  virtual bool parseAppToRaw(char *raw, int &len);
+  virtual bool parseRawToApp(char *raw, int &len);
+  virtual std::string toString(int numOfIndent = 0);
   void setValue(std::string val) { value_ = val; }
-  void setType(std::string tp) { type_ = tp; }
+  std::string getValue() { return value_; }
+  void setName(std::string name) { avpName_ = name; }
+  std::string getName() { return avpName_; }
+  void setType(std::string type) { type_ = type; }
+  std::string getType() { return type_; }
   void setCode(int code) { avpCode_ = code; }
-  // if the length is configured to 0, will convert it to 1
+  int getCode() { return avpCode_; }
   void setLength(int len) {
-    length_ = (len == 0) ? 1 : len; }
-  // if the quantity is configured to 0, will convert it to 1
+    length_ = (len == 0) ? 1 : len; 
+  }
+  int getLength() { return length_; }
   void setQuantity(int quantity) {
-    quantity_ = (quantity == 0) ? 1 : quantity;}
-private:
-  std::string avpName_;
+    quantity_ = (quantity == 0) ? 1 : quantity;
+  }
+  int getQuantity() { return quantity_; }
+  void setDeepth(int deepth) { deepth_ = deepth; }
+  int getDeepth() { return deepth_; }
+
+  void setSignature(std::string signature) { signature_ = signature; }
+  std::string getSignature() { return signature_; }
+  std::string getParentSignature();
+protected:
+  std::string type_;
   std::string value_;
+  std::string avpName_;
+  std::string signature_;
   int avpCode_;
   int length_;
   int quantity_;
-  std::string type_;
+  int deepth_;
 };
 
-class Container
+class EntryContainer
 {
 public:
-  Container() {}
-  ~Container() {}
+  EntryContainer() {}
+  ~EntryContainer() { // remember to delete the  avps in the container
+  }
   // add the avp to avp list, only set the name and value
   // field for the avpEntry structure, and will full fill
   // the structure by fillAvpsWithTypesFromDictionary() menthod
+  virtual bool addAvp( std::string name, std::string value );
+  virtual bool addAvp(std::string name, std::string type, int len,
+              int quantity);
+  virtual bool parseAppToRaw(char *raw, int &len) = 0;
+  virtual bool parseRawToApp(char *raw, int &len) = 0;
+  virtual std::string toString(int numOfIndent = 0);
+  
+  EntryContainer* appendContainer(std::string name);
+  AvpEntry* appendAvp(std::string name, std::string value);
+  AvpEntry* appendAvp(std::string name, std::string type, int len,
+                      int quantity);
+  void appendAvp(AvpEntry* avp) {
+    avpList_.push_back(avp);
+  }
+  std::vector<AvpEntry*> avpList_;
+};
+
+class GavpEntry : public AvpEntry, public EntryContainer
+{
+public:
+  GavpEntry() {}
+  ~GavpEntry() {}
+  bool parseAppToRaw(char *raw, int &len);
+  bool parseRawToApp(char *raw, int &len);
   bool addAvp( std::string name, std::string value );
   bool addAvp(std::string name, std::string type, int len,
               int quantity);
+  std::string toString(int numOfIndent);
+};
+
+class MessageEntryContainer : public EntryContainer
+{
+public:
+  MessageEntryContainer() {}
+  ~MessageEntryContainer() {
+    //remeber to delete all the avps in the container
+  }
+  
   // full fill the avps for all ones in avpList, get full
   // information from dictionary manager object
   bool fillAvpsWithTypesFromDictionary(std::string cmdName);
@@ -81,12 +115,9 @@ public:
   // before calling this menthod
   bool createAvpsFromDictionary(std::string cmdName);
   void print();
-  int parseAppToRaw(char *raw);
-  int parseRawToApp(char *raw);
+  bool parseAppToRaw(char *raw, int &len);
+  bool parseRawToApp(char *raw, int &len);
 
-private:
-  std::vector<AvpEntry> avpList_;
 };
 
 #endif
-  

@@ -22,15 +22,18 @@
 #include <string>
 #include <cassert>
 #include <sstream>
+#include <vector>
 #include <xercesc/util/XercesDefs.hpp>
 
+class GroupAvp;
 // class reference to the avp tag in dictionary document
 class Avp
 {
 public:
   // constructor
   Avp() : name_(std::string("")), type_(std::string("")),
-          code_(0), length_(0), quantity_(0) {}
+          code_(0), length_(0), quantity_(0), deepth_(0),
+          parent_(0), signature_("") {}
   Avp(std::string name, int code)
     :name_(name), code_(code), type_(std::string("")),
      length_(0), quantity_(0) {}
@@ -40,6 +43,9 @@ public:
     code_ = avp.code_;
     length_ = avp.length_;
     quantity_ = avp.quantity_;
+    signature_ = avp.signature_;
+    parent_ = avp.parent_;
+    deepth_ = avp.deepth_;
   }
   ~Avp() {}
 
@@ -48,7 +54,9 @@ public:
   std::string getType() { return type_; }
   int getCode() { return code_; }
   int getLength() { return length_; }
-  int getQuantity() { return quantity_; }   
+  int getQuantity() { return quantity_; }
+  int getDeepth() { return deepth_; }
+  GroupAvp* getParent() { return parent_; }
   void setName( const std::string name ) { name_ = name; }
   void setType( const std::string type ) { type_ = type; }
   void setType( const char *type ) { type_ = std::string(type); }
@@ -63,7 +71,8 @@ public:
     }
     std::stringstream(len) >> length_;
   }
-
+  void setDeepth(int deepth) { deepth_ = deepth; }
+  void setParent(GroupAvp* pGroupAvp);
   void setQuantity(const int quantity) { quantity_ = quantity; }
   void setQuantity(const std::string quantity) {
     if (quantity.size() == 0) {
@@ -72,21 +81,51 @@ public:
     std::stringstream(quantity) >> quantity_;
   }
 
+  virtual std::string toString(int numOfIndent = 0);
+  virtual bool goThroughSelf(std::vector<Avp*> &allAvps);
+  std::string genSignature();
+  std::string getSignature() { return signature_; }
+  virtual bool isGroup() { return false; }
+
   Avp& operator = (const Avp &other) {
     this->name_ = other.name_;
     this->type_ = other.type_;
     this->code_ = other.code_;
     this->length_ = other.length_;
     this->quantity_ = other.quantity_;
+    this->deepth_ = other.deepth_;
+    this->parent_ = other.parent_;
+    this->signature_ = other.signature_;
     return *this;
   }
   
-private:
+protected:
   std::string name_;
   std::string type_;
   int         code_;
   int         length_;
   int         quantity_;
+  int         deepth_;
+  GroupAvp*   parent_;
+  std::string signature_;
+};
+
+class GroupAvp : public Avp
+{
+public:
+  GroupAvp() {}
+  ~GroupAvp() {// remember to delete all the sub avps
+  }
+  bool addAvp(Avp *avp) {
+    subAvpList_.push_back(avp);
+  }
+  std::string toString(int numOfIndent = 0);
+  Avp* findAvp(std::string &findName);
+  bool goThroughSelf(std::vector<Avp*> &allAvps);
+  bool isGroup() { return true; }
+private:
+  friend class Command;
+  std::vector<Avp*> subAvpList_;
 };
 
 // class reference to the command tag in dictionary document
@@ -97,18 +136,20 @@ public:
   // constructor
   Command(int size=MAX_AVP_NUM_PER_COMMAND) : size_(size) {
     numOfAvp_ = 0;
-    avps_ = new Avp[size_];
+    avps_ = new Avp*[size_];
   }
   Command(std::string name, int code, int size=MAX_AVP_NUM_PER_COMMAND)
     : name_(name),code_(code),size_(size) {
     avps_ = 0;
     numOfAvp_ = 0;
-    avps_ = new Avp[size_];
+    avps_ = new Avp*[size_];
   }
 
   ~Command() {
-    if(!avps_) 
-      delete[] avps_;
+    for (int i =  0; i < numOfAvp_; i++) {
+      if (avps_[i]) delete avps_[i];
+    }
+    if (!avps_) delete[] avps_;
     avps_ = 0;
   }
 
@@ -123,17 +164,17 @@ public:
   }
 
   // add one avp to the current command
-  bool addAvp( Avp avp );
+  bool addAvp( Avp *avp );
+  bool addGroupAvp( GroupAvp *gavp );
 
   // check whether the command has a given avp by name
   bool hasAvp( std::string &findName );
-
 
   // find and get the avp by the given name, result to assigned
   // to output argument, there is no performance consideration
   // for find a element in a list container, if there is a
   // performance requirement, use a MAP or SET container instead
-  bool findAvp(std::string &findName, Avp *output);
+  Avp* findAvp(std::string &findName);
 
   // get the avp by index 
   bool getAvpByIndex(int index, Avp *output);
@@ -142,7 +183,9 @@ public:
   int getNumOfAvp() {
     return numOfAvp_;
   }
-  Avp   *avps_;
+  std::string toString(int numOfIndent = 0);
+  bool goThroughAllAvps(std::vector<Avp*> &allAvps);
+  Avp   **avps_;
   int    size_;
 private:
   std::string name_;
@@ -183,9 +226,11 @@ private:
   // get number of tag definitions by given name in XML document
   int getNumOfTagByName(const XMLCh *name);
   // get the avp tag by the given avp name
-  bool getAvpByName(const std::string &name, Avp *output);
+  Avp* getAvpByName(const std::string &name);
   // get root dictionary DOMNode, this is called by internal menthod
   xercesc::DOMNode* getRootDictionaryNode();
+  Avp* parseAvp(xercesc::DOMNode *n);
+  GroupAvp* parseGroupAvp(xercesc::DOMNode *n);
 
   // members
   xercesc::XercesDOMParser *parser_;

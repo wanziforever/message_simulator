@@ -68,18 +68,23 @@ bool Task::processTask()
   // go throuth the item list, and process one by one
   for (std::vector<RunItem>::iterator it = items_.begin();
        it != items_.end(); ++it ) {
-    (*it).processItem();
+    if (!(*it).processItem()) {
+      debugLog(NGB_TASK, "Task::processTask processItem fail");
+      return false;
+    }
   }
 }
 
 bool Task::setupRunItems()
 {
+  debugLog(NGB_TASK, "Task::setupRunItems enter");
   char line[256];
   std::ifstream taskFile((path_.c_str()), std::ifstream::in);
+  //TODO report the file not exist error
   while (taskFile.getline(line, 256)) {
     std::string entry = std::string(line);
     entry = Utils::trim(entry);
-    if (!entry.size() && Utils::isComments(entry)) 
+    if (!entry.size() || Utils::isComments(entry)) 
       continue;
     // the RunItem will accept the whole parameter line as input
     // detail format of parameter line will be parsed by specified
@@ -87,6 +92,7 @@ bool Task::setupRunItems()
     RunItem item(entry);
     items_.push_back(item);
   }
+  debugLog(NGB_TASK, "Task::setupRunItems exit");
   return true;
 }
 

@@ -15,7 +15,10 @@
 
 // define the util tools for NGB project
 
+#include <sstream>
+#include "log.hh"
 #include "utils.hh"
+
 
 UTILS_NAMESPACE_START
 
@@ -80,6 +83,35 @@ int binaryToAscii(char *raw, int len, char *output)
     pos_in_output += 2;
   }
   return pos_in_output;
+}
+
+std::string intToString(int number)
+{
+  std::stringstream oss;
+  oss << number;
+  return oss.str();
+}
+
+int stringToInt(std::string number)
+{
+  int ret = 0;
+  std::istringstream ss(number);
+  ss >> ret;
+  return ret;
+}
+
+std::string makeDuplicate(const std::string &str, int x)
+{
+  std::string newstr;
+  if (x < 0) return str;
+  if (x == 0) return std::string("");
+  newstr.reserve(str.length() * x);
+  int y = 0;
+  while (y < x) {
+    newstr.append(str);
+    y++;
+  }
+  return newstr;
 }
 
 UTILS_NAMESPACE_END

@@ -14,11 +14,12 @@
 // History: created @2012/10/10
 
 #ifndef NGB_PARSER_TYPE_H__
-#define NGB_PARSER_TYPE_H
+#define NGB_PARSER_TYPE_H__
 
 #include "octect_value_parser.hh"
 #include "utf8_value_parser.hh"
 #include "integer32_value_parser.hh"
 #include "integer64_value_parser.hh"
+#include "short_value_parser.hh"
 
 #endif

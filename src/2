@@ -1,0 +1,1 @@
+g++ -I. -I/home/denny/code/message_simulator/src/../inc -c container.cc -o container.o

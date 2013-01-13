@@ -30,10 +30,34 @@
     <avprule name="reserved" quantity="121"/>
   </command>
 
+  <command name="DFS_SYNC_REPLICA" code="2">
+    <avprule name="location"/>
+    <avprule name="number"/>
+    <avprule name="intPadding"/>
+    <avprule name="syncUnit" quantity="10"/>
+  </command>
+
   <!-- Definition of all the supported AVPs, the avp is used
        to compose the message content -->
+  <Avp name="syncUnit" code="222">
+    <grouped>
+      <avprule>handle</avprule>
+      <avprule>size</avprule>
+      <avprule>state</avprule>
+    </grouped>
+  </Avp>
+
   <avp name="filePath" code="222" length="256">
     <type name="UTF8String"/>
+  </avp>
+  <avp name="state" code="222">
+    <type name="Integer32"/>
+  </avp>
+  <avp name="number" code="222">
+    <type name="Short"/>
+  </avp>
+  <avp name="location" code="222">
+    <type name="Short"/>
   </avp>
   <avp name="index" code="222">
     <type name="Integer32"/>

@@ -32,7 +32,7 @@ public:
   }
   
   ~RunItem() {}
-  void processItem();
+  bool processItem();
 private:
   // parse the input line of string into parameters
   bool setupRunItems(std::string line);
