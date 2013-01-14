@@ -119,14 +119,13 @@ bool RunItem::sendMessage()
   
   len = FIX_MESSAGE_CONTENT_SIZE;
 
-  //usleep(500000);
-  //g_udp_agent->sendMsg(ConfigManager::getDestAddress().c_str(),
-  //                     ConfigManager::getDestPort(),
-  //                     g_buf,
-  //                     len);
+  usleep(500000);
+  g_udp_agent->sendMsg(ConfigManager::getDestAddress().c_str(),
+                       ConfigManager::getDestPort(),
+                       g_buf,
+                       len);
 
   debugLog(NGB_RUN_ITEM, "RunItem::sendMessage exit...");
-  exit(0);
   return true;
 }
 

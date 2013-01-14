@@ -11,7 +11,7 @@
 
   <!-- Definition of all the supported command, the command is
        used for the indication of each message -->
-  <command name="GET_CHUNK" code="2">
+  <command name="GET_CHUNK" code="32">
       <avprule name="fileId"/>
       <avprule name="destIP"/>
   </command>
@@ -30,6 +30,41 @@
     <avprule name="reserved" quantity="121"/>
   </command>
 
+  <command name="DFS_INPUT_CHUNK_PRIVATE" code="23">
+    <avprule name="filePath"/>
+    <avprule name="index"/>
+    <avprule name="privateDataSize"/>
+    <avprule name="privateData"/>
+    <avprule name="recordFlag"/>
+    <avprule name="reserved" quantity="127"/>
+  </command>
+
+  <command name="DFS_DELETE_FILE" code="14">
+    <avprule name="filePath"/>
+    <avprule name="delmode"/>
+    <avprule name="intPadding"/>
+    <avprule name="reserved" quantity="256"/>
+  </command>
+  
+  <command name="DFS_INPUT_FILE" code="10">
+    <avprule name="filePath"/>
+    <avprule name="type"/>
+    <avprule name="movable"/>
+    <avprule name="fileSize"/>
+    <avprule name="privateData"/>
+    <avprule name="privateDataSize"/>
+    <avprule name="intPadding"/>
+    <avprule name="reserved" quantity="128"/>
+  </command>
+
+  <command name="DFS_INPUT_FILE_PRIVATE" code="22">
+    <avprule name="filePath"/>
+    <avprule name="privateDataSize"/>
+    <avprule name="intPadding"/>
+    <avprule name="privateData"/>
+    <avprule name="reserved" quantity="128"/>
+  </command>
+  
   <command name="DFS_SYNC_REPLICA" code="2">
     <avprule name="location"/>
     <avprule name="number"/>
@@ -37,24 +72,264 @@
     <avprule name="syncUnit" quantity="10"/>
   </command>
 
+  <command name="DFS_ADD_REPLICA" code="12">
+    <avprule name="handle"/>
+    <avprule name="status"/>
+    <avprule name="location"/>
+    <avprule name="reserved" quantity="256"/>
+  </command>
+
+  <command name="DFS_REPORT_REPLICA" code="8">
+    <avprule name="handle"/>
+    <avprule name="status"/>
+    <avprule name="location"/>
+    <avprule name="chunkSize"/>
+    <avprule name="intPadding"/>
+    <avprule name="checksum"/>
+    <avprule name="reserved" quantity="256"/>
+  </command>
+
+  <command name="DFS_REPORT_DELETION" code="9">
+    <avprule name="handle"/>
+    <avprule name="status"/>
+    <avprule name="location"/>
+    <avprule name="type"/>
+    <avprule name="reserved" quantity="255"/>
+  </command>
+
+  <command name="DFS_REPORT_DELETION" code="32">
+    <avprule name="handle"/>
+    <avprule name="status"/>
+    <avprule name="location"/>
+    <avprule name="type"/>
+    <avprule name="reserved" quantity="255"/>
+  </command>
+
+  <command name="DFS_CHUNK_SVR_SPACE_LOW" code="16">
+    <avprule name="uuid"/>
+    <avprule name="index"/>
+    <avprule name="deepth"/>
+    <avprule name="totalDiskSpace"/>
+    <avprule name="usedDiskSpace"/>
+    <avprule name="reserved" quantity="256"/>
+  </command>
+
+  <command name="DFS_REP_SESSION_START" code="17">
+    <avprule name="handle"/>
+    <avprule name="srcPort"/>
+    <avprule name="dstPort"/>
+    <avprule name="srcIP"/>
+    <avprule name="dstIP"/>
+    <avprule name="direction"/>
+    <avprule name="speed"/>
+    <avprule name="result"/>
+    <avprule name="intPadding"/>
+    <avprule name="reserved" quantity="256"/>
+  </command>
+
+  <command name="DFS_REP_SESSION_STOP" code="18">
+    <avprule name="handle"/>
+    <avprule name="srcPort"/>
+    <avprule name="dstPort"/>
+    <avprule name="srcIP"/>
+    <avprule name="dstIP"/>
+    <avprule name="direction"/>
+    <avprule name="speed"/>
+    <avprule name="result"/>
+    <avprule name="intPadding"/>
+    <avprule name="reserved" quantity="256"/>
+  </command>
+
+  <command name="DFS_TRIGGER_UPLOAD_SEED" code="24">
+    <avprule name="filePath"/>
+    <avprule name="taskId"/>
+    <avprule name="srcPort"/>
+    <avprule name="intPadding"/>
+    <avprule name="reserved" quantity="256"/>
+  </command>
+
+  <command name="DFS_INS_FILE_SEED" code="28">
+    <avprule name="filePath"/>
+    <avprule name="reserved" quantity="256"/>
+  </command>
+
+  <command name="DFS_INS_CHUNK_SEED" code="29">
+    <avprule name="handle"/>
+    <avprule name="reserved" quantity="256"/>
+  </command>
+
+  <command name="DFS_UPDATE_FILE_SEED" code="30">
+    <avprule name="filePath"/>
+    <avprule name="reserved" quantity="256"/>
+  </command>
+  
+  <command name="DFS_UPDATE_CHUNK_SEED" code="31">
+    <avprule name="handle"/>
+    <avprule name="reserved" quantity="256"/>
+  </command>
+
+  <command name="DFS_CHECK_FILE_EXIST" code="40">
+    <avprule name="filePath"/>
+    <avprule name="reserved" quantity="256"/>
+  </command>
+
+  <command name="DFS_GET_FILE_INFO" code="26">
+    <avprule name="filePath"/>
+    <avprule name="fileId"/>
+    <avprule name="chunk_number"/>
+    <avprule name="privateDataSize"/>
+    <avprule name="privateData"/>
+    <avprule name="fileType"/>
+    <avprule name="byteReserved" quantity="63"/>
+  </command>
+
+  <command name="DFS_GET_FULL_FILE" code="38">
+    <avprule name="filePath"/>
+    <avprule name="byteReserved" quantity="64"/>
+  </command>
+
+  <command name="DFS_GET_CHUNK_REPLICA" code="25">
+    <avprule name="filePath"/>
+    <avprule name="index"/>
+    <avprule name="intPadding"/>
+    <avprule name="handle"/>
+    <avprule name="size"/>
+    <avprule name="privateDataSize"/>
+    <avprule name="privateData"/>
+    <avprule name="checksum"/>
+    <avprule name="intIP" quantity="2"/>
+    <avprule name="srcPort"/>
+    <avprule name="reserved" quantity="128"/>
+  </command>
+
+  <command name="DFS_GET_CHUNK_OUT" code="27">
+    <avprule name="handle"/>
+    <avprule name="speed"/>
+    <avprule name="srcPort"/>
+    <avprule name="dstPort"/>
+    <avprule name="srcIP"/>
+    <avprule name="dstIP"/>
+    <avprule name="direction"/>
+    <avprule name="speedMandatory"/>
+    <avprule name="topPriority"/>
+    <avprule name="shortPadding"/>
+    <avprule name="reserved" quantity="128"/>
+  </command>
+
+  <command name="DFS_CREATE_DIR" code="35">
+    <avprule name="filePath"/>
+    <avprule name="reserved" quantity="256"/>
+  </command>
+
+  <command name="DFS_DELETE_DIR" code="36">
+    <avprule name="filePath"/>
+    <avprule name="reserved" quantity="256"/>
+  </command>
+
+  <command name="DFS_DELETE_CHUNK" code="37">
+    <avprule name="filePath"/>
+    <avprule name="index"/>
+    <avprule name="intPadding"/>
+    <avprule name="reserved" quantity="256"/>
+  </command>
+
+  <command name="DFS_GET_CHUNK_PRIVATE" code="42">
+    <avprule name="filePath"/>
+    <avprule name="index"/>
+    <avprule name="privateDataSize"/>
+    <avprule name="privateData"/>
+    <avprule name="reserved" quantity="128"/>
+  </command>
+
+  <command name="DFS_MANAGE_SLAVE" code="43">
+    <avprule name="srcIP" quantity="3"/>
+    <avprule name="slaveAction"/>
+  </command>
+ 
   <!-- Definition of all the supported AVPs, the avp is used
        to compose the message content -->
-  <Avp name="syncUnit" code="222">
+  <avp name="syncUnit" code="222">
     <grouped>
-      <avprule>handle</avprule>
-      <avprule>size</avprule>
-      <avprule>state</avprule>
+      <avprule name="handle"/>
+      <avprule name="size"/>
+      <avprule name="state"/>
     </grouped>
-  </Avp>
+  </avp>
 
   <avp name="filePath" code="222" length="256">
     <type name="UTF8String"/>
   </avp>
+  <avp name="uuid" code="222" length="16">
+    <type name="UTF8String"/>
+  </avp>
+  <avp name="srcIP" code="222" length="16">
+    <type name="UTF8String"/>
+  </avp>
+  <avp name="dstIP" code="222" length="16">
+    <type name="UTF8String"/>
+  </avp>
+  <avp name="direction" code="222" length="16">
+    <type name="Integer32"/>
+  </avp>
+  <avp name="slaveAction" code="222" length="16">
+    <type name="Integer32"/>
+  </avp>
+  <avp name="intIP" code="222" length="16">
+    <type name="Integer32"/>
+  </avp>
   <avp name="state" code="222">
+    <type name="Integer32"/>
+  </avp>
+  <avp name="speed" code="222">
+    <type name="Integer32"/>
+  </avp>
+  <avp name="result" code="222">
+    <type name="Integer32"/>
+  </avp>
+  <avp name="taskId" code="222">
     <type name="Integer32"/>
   </avp>
   <avp name="number" code="222">
     <type name="Short"/>
+  </avp>
+  <avp name="shortPadding" code="222">
+    <type name="Short"/>
+  </avp>
+  <avp name="speedMandatory" code="222">
+    <type name="Byte"/>
+  </avp>
+  <avp name="topPriority" code="222">
+    <type name="Byte"/>
+  </avp>
+  <avp name="recordFlag" code="222">
+    <type name="Short"/>
+  </avp>
+  <avp name="deepth" code="222">
+    <type name="Integer32"/>
+  </avp>
+  <avp name="chunk_number" code="222">
+    <type name="Integer32"/>
+  </avp>
+  <avp name="fileType" code="222">
+    <type name="Byte"/>
+  </avp>
+  <avp name="byteReserved" code="222">
+    <type name="Byte"/>
+  </avp>
+  <avp name="srcPort" code="222">
+    <type name="Integer32"/>
+  </avp>
+  <avp name="dstPort" code="222">
+    <type name="Integer32"/>
+  </avp>
+  <avp name="totalDiskSpace" code="222">
+    <type name="Integer64"/>
+  </avp>
+  <avp name="fileId" code="222">
+    <type name="Integer64"/>
+  </avp>
+  <avp name="usedDiskSpace" code="222">
+    <type name="Integer64"/>
   </avp>
   <avp name="location" code="222">
     <type name="Short"/>
@@ -62,7 +337,16 @@
   <avp name="index" code="222">
     <type name="Integer32"/>
   </avp>
+  <avp name="chunkSize" code="222">
+    <type name="Integer32"/>
+  </avp>
+  <avp name="delmode" code="222">
+    <type name="Integer32"/>
+  </avp>
   <avp name="intPadding" code="222">
+    <type name="Integer32"/>
+  </avp>
+  <avp name="status" code="222">
     <type name="Integer32"/>
   </avp>
   <avp name="privateData" code="222" length="128">
@@ -74,7 +358,16 @@
   <avp name="size" code="222">
     <type name="Integer32"/>
   </avp>
+  <avp name="movable" code="222">
+    <type name="Integer32"/>
+  </avp>
+  <avp name="type" code="222">
+    <type name="Integer32"/>
+  </avp>
   <avp name="handle" code="222">
+    <type name="Integer64"/>
+  </avp>
+  <avp name="fileSize" code="222">
     <type name="Integer64"/>
   </avp>
   <avp name="checksum" code="222" length="16">

@@ -28,6 +28,7 @@ typedef enum
   NGB_INTEGER32_TYPE,
   NGB_INTEGER64_TYPE,
   NGB_SHORT_TYPE,
+  NGB_BYTE_TYPE,
 } NGB_DATA_TYPE;
 
 class AvpType
