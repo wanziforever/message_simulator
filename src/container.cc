@@ -51,6 +51,10 @@ static ValueParser* createValueParser(NGB_DATA_TYPE type)
     debugLog(NGB_CONTAINER,
              "AvpEntry::parseAppToRaw create short parser");
     return new ShortValueParser;
+  case NGB_BYTE_TYPE:
+    debugLog(NGB_CONTAINER,
+             "AvpEntry::parseAppToRaw create byte parser");
+    return new ByteValueParser;
   default:
     assert(0);
   }
