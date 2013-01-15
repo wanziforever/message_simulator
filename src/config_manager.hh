@@ -29,6 +29,7 @@ public:
   static void init(const std::string configFile);
   static std::string getValueByName(const std::string &name);
   static void print();
+  static std::string getDisplayData();
 private:
   static void setupParameters();
   static bool parseParameters(std::string &input);

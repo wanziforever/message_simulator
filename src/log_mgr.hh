@@ -20,11 +20,12 @@
 #define NGB_LOG_MGR_H__
 
 #include <string>
+#include <fstream>
 
 class LogMgr
 {
 public:
-  LogMgr();
+  LogMgr(std::string logFileName);
   ~LogMgr();
   // print the error message
   static void errorMessage(const char *msg);
@@ -32,6 +33,9 @@ public:
   static void debugMessage(char *msg);
   // host name for current host
   static std::string hostName_;
+  static int log_file;
+  static std::ofstream logFile;
+  static bool isLogFileOpened;
 };
 
 

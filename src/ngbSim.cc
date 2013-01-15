@@ -23,20 +23,22 @@
 #include "config_manager.hh"
 #include "task.hh"
 #include "udp_agent.hh"
+#include "log_mgr.hh"
 #include "log.hh"
 
 //---------------------------------------------------------
 // main
 //---------------------------------------------------------
 
+const std::string LOG_FILE_NAME = "debuglog";
 UdpAgent *g_udp_agent = 0;
 DictionaryManager *dictMgr = 0;
 
 int main(int argc, char *argv[])
 {
+  LogMgr log_manager(LOG_FILE_NAME);
   NgbFormatTrace::init();
   ConfigManager::init("config.conf");
-
   debugLog(NGB_MAIN, "current working directory(%s),\n"
            " task(%s),"
            " dest_address(%s),"
@@ -45,6 +47,8 @@ int main(int argc, char *argv[])
            ConfigManager::getTask().c_str(),
            ConfigManager::getDestAddress().c_str(),
            ConfigManager::getDestPort());
+  std::cout << "++--------------------------------++" << std::endl;
+  std::cout << ConfigManager::getDisplayData() << std::endl;
   g_udp_agent = new UdpAgent();
   g_udp_agent->init(ConfigManager::getLocalPort());
   dictMgr = new DictionaryManager;
@@ -59,4 +63,5 @@ int main(int argc, char *argv[])
   if (dictMgr)     delete dictMgr;
   if (task)        delete task;
   if (g_udp_agent) delete g_udp_agent;
+  debugLog(NGB_MAIN, "program exit");
 }

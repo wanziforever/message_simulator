@@ -111,8 +111,6 @@ bool Avp::goThroughSelf(std::vector<Avp*> &allAvps)
   for (int i = 0; i < (getQuantity() == 0 ? 1 : getQuantity()); i++) {
     Avp *avp = new Avp((*this));
     avp->setName(avp->getName() + Utils::intToString(i));
-    debugLog(NGB_DICT_MGR, "the parent id is %d %d",
-             getParent(), avp->getParent());
     avp->genSignature();
     debugLog(NGB_DICT_MGR,
              "Avp::goThroughSelf signature for Avp %s is %s",

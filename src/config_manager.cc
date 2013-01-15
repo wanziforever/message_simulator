@@ -112,3 +112,16 @@ void ConfigManager::print()
 {
   
 }
+
+std::string ConfigManager::getDisplayData()
+{
+  char str[2048] = {0};
+  sprintf(str,
+          "Scenario task file : %s\n"
+          "Local      Port    : %d\n"
+          "Destination Address: %s\n"
+          "Destination  Port  : %d",
+          getTask().c_str(), getLocalPort(),
+          getDestAddress().c_str(), getDestPort());
+  return std::string(str);
+}

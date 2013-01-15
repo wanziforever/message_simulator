@@ -90,6 +90,7 @@ public:
   GroupRawEntry* getParent() { return parent_; }
   std::string getSignature() { return signature_; }
   virtual std::string toString(int numOfIndent = 0);
+  virtual std::string getDisplayData();
   std::string generateSignature();
   
 protected:
@@ -122,9 +123,15 @@ public:
   ~GroupRawEntry() {}
   RawEntry* appendEntry(std::string, std::string value);
   GroupRawEntry* appendContainer(std::string name);
+  // get string print to debug log
   std::string toString(int numOfIndent = 0);
+  // get string print to display
+  std::string getDisplayData();
+  bool isRoot() { return isRootGroup_; }
+  void setRoot(bool yesORno) { isRootGroup_ = yesORno; }
 protected:
   std::vector<RawEntry*> childEntries_;
+  bool isRootGroup_;
 };
 
 class Message
@@ -132,14 +139,20 @@ class Message
 public:
   // constructor used to read human readable format from file
   // normally used for parsing app to raw format.
-  Message(std::string path) : path_(std::string(path)) {}
+  Message(std::string path) : path_(path), commandCode_(0),command_(""),
+                              errorCode_(0) {
+    rootGroupRawEntry_.setRoot(true);
+  }
   // constructor normally used for parsing raw to app
-  Message() : path_("") {}
+  Message() : path_(""), commandCode_(0), command_(""), errorCode_(0) {
+    rootGroupRawEntry_.setRoot(true);
+  }
   bool init();
   int parseRawToApp(char *output);
   int parseAppToRaw(char *output);
   void printRawEntry();
-  void print();
+  void printDebug();
+  std::string getDisplayData();
   bool readMsgFile();
   char* getRawPtr() { return (char*)raw_; }
 private:
@@ -160,6 +173,7 @@ private:
   MessageEntryContainer avpContainer_;
   char raw_[COMMON_MSG_SIZE];
   std::string path_;
+  int errorCode_;
 };
   
 #endif

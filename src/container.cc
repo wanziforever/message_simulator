@@ -79,11 +79,6 @@ bool AvpEntry::parseAppToRaw(char *raw, int &len)
   int i = 0;
   int size = 0;
   len = 0;
-  {
-    char bout[128] = {0};
-    Utils::binaryToAscii(raw, 64, (char*)bout);
-    debugLog(NGB_MESSAGE, "Message::sendMessage before app to raw \n%s", bout);
-  }
   for (; i < getQuantity(); i++) {
     // TODO; the getValue should be enhanced to return one value for
     // one quantity, some format of value should be designed
@@ -99,11 +94,7 @@ bool AvpEntry::parseAppToRaw(char *raw, int &len)
     //          realLen, size, raw_readable);
     // delete[] raw_readable;
   }
-  {
-    char bout[128] = {0};
-    Utils::binaryToAscii(raw, 64, (char*)bout);
-    debugLog(NGB_MESSAGE, "Message::sendMessage after app to raw \n%s", bout);
-  }
+  
   delete vp;
   return true;
 }

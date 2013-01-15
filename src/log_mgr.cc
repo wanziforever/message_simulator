@@ -21,7 +21,10 @@
 
 using namespace std;
 const char *logFormat_tail = "\nEND OF REPORT ";
-string LogMgr::hostName_ = std::string("");
+string LogMgr::hostName_;
+int LogMgr::log_file = 0;
+ofstream LogMgr::logFile;
+bool LogMgr::isLogFileOpened = false;
 
 string getCurrentTime()
 {
@@ -44,26 +47,35 @@ void removeNewLineSuffix(char *msg)
   return;
 }
 
-LogMgr::LogMgr()
+LogMgr::LogMgr(string logFileName)
 {
   char name[64];
   if (gethostname(name, 64) != 0) {
     return;
   }
-  hostName_ = string(name);
+  hostName_.assign(name);
+  logFile.open(logFileName.c_str());
+  isLogFileOpened = true;
 }
 
 LogMgr::~LogMgr()
 {
+  logFile << flush;
+  logFile.close();
+  isLogFileOpened = false;
 }
 
 void LogMgr::errorMessage(const char *msg)
 {
-  cout << string(msg) << endl;
+  logFile << string(msg) << endl;
 }
 
 void LogMgr::debugMessage(char *msg)
 {
+  if (!isLogFileOpened) {
+    cout << "log file not opened" << endl;
+    return;
+  }
   removeNewLineSuffix(msg);
   string timestamp = getCurrentTime();
   string buf = string("+++  ") + hostName_ + string("\t") +
@@ -71,5 +83,5 @@ void LogMgr::debugMessage(char *msg)
     string("\n") + string("DEBUG LOG") + string("\t") +
     string(msg) + string(logFormat_tail) + string("+++  ");
   
-  cout << buf << "\n^A"<< endl;
+  logFile << buf << "\n^A"<< endl;
 }

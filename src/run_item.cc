@@ -36,9 +36,12 @@ RunItem::RunItem(std::string line)
 bool RunItem::processItem()
 {
   debugLog(NGB_RUN_ITEM, "RunItem::processItem enter...");
+  display("++--------------------------------++");
   if (mode_ == "T") {
     debugLog(NGB_RUN_ITEM,
              "RunItem::processItem sending message");
+    std::string progress = "TASK MODE (T) -- --> Sending message";
+    display(progress);
     if (!sendMessage()) {
       debugLog(NGB_RUN_ITEM,
                "RunITem::processItem fail to send message");
@@ -47,6 +50,8 @@ bool RunItem::processItem()
   } else if (mode_ == "R") {
     debugLog(NGB_RUN_ITEM,
              "RunItem::processItem receiving message");
+    std::string progress = "TASK MODE (R) -- --> Receiving message";
+    display(progress);
     receiveMessage();
   } else {
     debugLog(NGB_RUN_ITEM,
@@ -57,6 +62,11 @@ bool RunItem::processItem()
   
   debugLog(NGB_RUN_ITEM, "RunItem::processItem exit...");
   return true;
+}
+
+void RunItem::display(std::string information)
+{
+  std::cout << information << std::endl;
 }
 
 bool RunItem::setupRunItems(std::string line)
@@ -93,33 +103,25 @@ bool RunItem::sendMessage()
     return false;
   }
   msg.printRawEntry();
+  display(msg.getDisplayData());
   memset(g_buf, 0, COMMON_MSG_SIZE);
   int len = msg.parseAppToRaw((char*)g_buf);
-  // char *raw_readable = new char[len * 2 + 1];
-  // // sendto(buf);
-  // Utils::binaryToAscii(g_buf, len, raw_readable);
-  // raw_readable[len*2] = '\0';
-  // debugLog(NGB_RUN_ITEM,
-  //          "RunItem::sendMessage raw data is %s", raw_readable);
-  // delete[] raw_readable;
-
   // no matter what is the real size of the message to be sent, just set
   // fixed message length which is a logic couple from receiver system
-  msg.print();
-  char bout[40] = {0};
-  Utils::binaryToAscii(g_buf, 10, (char*)bout);
-  debugLog(NGB_RUN_ITEM, "RunItem::sendMessage app to raw \n%s", bout);
+  // msg.printDebug();
+  // char bout[40] = {0};
+  // Utils::binaryToAscii(g_buf, 10, (char*)bout);
+  // debugLog(NGB_RUN_ITEM, "RunItem::sendMessage app to raw \n%s", bout);
 
-  ////// test code for parsing  message just finish encode //////////
-  Message msgR;
+  // ////// test code for parsing  message just finish encode //////////
+  // Message msgR;
   // TODO: parseRawToApp to be the self handling of the raw data buffer
-  msgR.parseRawToApp(g_buf);
-  msgR.print();
-  ////////////////////////// END ////////////////////////////////////
+  // msgR.parseRawToApp(g_buf);
+  // msgR.printDebug();
+  // ////////////////////////// END ////////////////////////////////////
   
   len = FIX_MESSAGE_CONTENT_SIZE;
-
-  usleep(500000);
+  //usleep(500000);
   g_udp_agent->sendMsg(ConfigManager::getDestAddress().c_str(),
                        ConfigManager::getDestPort(),
                        g_buf,
@@ -145,7 +147,8 @@ bool RunItem::receiveMessage()
   Message msg = g_udp_agent->receive();
   // TODO: parseRawToApp to be the self handling of the raw data buffer
   msg.parseRawToApp(msg.getRawPtr());
-  msg.print();
+  msg.printDebug();
+  display(msg.getDisplayData());
   debugLog(NGB_RUN_ITEM, "RunItem::receiveMessage exit...");
   return true;
 }

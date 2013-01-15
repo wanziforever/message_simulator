@@ -30,7 +30,7 @@ public:
     timeOut_ = item.timeOut_;
     pathOfMessage_ = item.pathOfMessage_;
   }
-  
+  void display(std::string information);
   ~RunItem() {}
   bool processItem();
 private:

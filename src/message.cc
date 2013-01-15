@@ -162,22 +162,45 @@ GroupRawEntry* GroupRawEntry::appendContainer(std::string name)
 std::string GroupRawEntry::toString(int numOfIndent)
 {
   std::string myIndent = Utils::makeDuplicate(INDENT, numOfIndent);
-  std::string myString = myIndent + getName() + std::string(" {\n");
+  int newNumOfIndent = numOfIndent;
+  std::string myString = "";
+  if (!isRoot()) {
+    myString = myIndent + getName() + std::string(" {\n");
+    newNumOfIndent = numOfIndent + 1;
+  }
   for (std::vector<RawEntry*>::iterator ite = childEntries_.begin();
        ite != childEntries_.end(); ite++) {
-    myString += (*ite)->toString(numOfIndent + 1) + std::string("\n");
+    myString += (*ite)->toString(newNumOfIndent) + std::string("\n");
   }
-  myString += myIndent + std::string("}");
+  if (!isRoot()) {
+    myString += myIndent + std::string("}");
+  }
   return myString;
+}
+
+std::string GroupRawEntry::getDisplayData()
+{
+  // currently simply use the toString() as the displayed data, although
+  // toString is designed for debug use
+  std::string display = toString();
+  return display;
 }
 
 std::string RawEntry::toString(int numOfIndent)
 {
   std::string myIndent = Utils::makeDuplicate(INDENT, numOfIndent);
   std::string myString = myIndent + getName() + std::string(" =: ") +
-    getValue() + std::string("(") + getSignature() +
-    std::string(")");
+    getValue()/* + std::string("(") + getSignature() +
+                   std::string(")")*/;
   return myString;
+}
+
+std::string RawEntry::getDisplayData()
+{
+  // currently simply use toString as the displayed data, although the
+  // toString is designed for debug log
+  std::string display = toString();
+  return display;
 }
 
 bool Message::init()
@@ -274,7 +297,6 @@ bool Message::createAvpsWithNameAndType()
   std::vector<Avp*> allAvps;
   command.goThroughAllAvps(allAvps);
 
-
   ////// test code to print out all the serialized avps //////
   std::string allAvpString = "";
   for (std::vector<Avp*>::iterator ite = allAvps.begin();
@@ -291,9 +313,6 @@ bool Message::createAvpsWithNameAndType()
            "Message::createAvpsWithNameAndType number of avps are %d",
            allAvps.size());
 
-  debugLog(NGB_MESSAGE, "Message::createAvpsWithNameAndType rawEntry are\n%s",
-           rootGroupRawEntry_.toString().c_str());
-
   for (std::vector<Avp*>::iterator ite = allAvps.begin();
        ite != allAvps.end(); ite++) {
     AvpEntry* e = new AvpEntry;
@@ -305,10 +324,6 @@ bool Message::createAvpsWithNameAndType()
   //return avpContainer_.createAvpsFromDictionary(command_);
   return true;
 }
-
-//void Message::setUdpHeader(udp_header h) {
-//  strncpy((char *)&hdr_, (char *)&h, sizeof(udp_header));
-//}
 
 bool Message::parseCommand(std::string entry)
 {
@@ -336,8 +351,6 @@ bool Message::parseCommand(std::string entry)
 bool Message::readMsgFile()
 {
   debugLog(NGB_MESSAGE, "Message::readMsgFile enter...");
-  debugLog(NGB_MESSAGE,
-           "Message::readMsgFile input file is %s", path_.c_str());
   char line[512];
   std::string name, value, entry;
   std::ifstream msgFile(path_.c_str(), std::ifstream::in);
@@ -399,7 +412,18 @@ void Message::printRawEntry()
            "%s", rootGroupRawEntry_.toString().c_str());
 }
 
-void Message::print()
+std::string Message::getDisplayData()
+{
+  std::string display = "";
+  if (errorCode_ == 1) {
+    display += "error message received!!!\n";
+  }
+  display += std::string("COMMAND NAME IS: ") + command_ + std::string("\n");
+  display += rootGroupRawEntry_.getDisplayData();
+  return display;
+}
+
+void Message::printDebug()
 {
   debugLog(NGB_MESSAGE,
            "print all the avps for command %s", command_.c_str());
@@ -418,7 +442,7 @@ int Message::parseAppToRaw(char *raw)
     return false;
   }
   
-  print();
+  printDebug();
   char *p = raw;
   int hdrLen = parseHdrAppToRaw(p);
   debugLog(NGB_MESSAGE, "Message::parseAppToRaw hdrLen is %d", hdrLen);
@@ -442,10 +466,6 @@ int Message::parseHdrRawToApp(char *raw)
   debugLog(NGB_MESSAGE, "Message::parseHdrRawToApp enter...");
   memset(&hdr_, 0, sizeof(struct dfs_msg_header));
 
-  char bout[40] = {0};
-  Utils::binaryToAscii(raw, 10, (char*)bout);
-  debugLog(NGB_MESSAGE, "Message::sendMessage app to raw \n%s", bout);
-  
   memcpy(&hdr_, raw, sizeof(dfs_msg_header));
   commandCode_ = hdr_.op;
   // code check whether it is a error message
@@ -453,6 +473,7 @@ int Message::parseHdrRawToApp(char *raw)
     debugLog(NGB_MESSAGE,
              "Message::parseHdrRawToApp get error message for command %d, "
              "error code is %d", commandCode_, hdr_.errcode);
+    errorCode_ = hdr_.reply;
   }
   std::stringstream ss;
   ss << commandCode_;
