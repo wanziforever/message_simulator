@@ -98,7 +98,8 @@ bool UdpAgent::sendMsg(const char *ip, int port, char *msg, int len)
   struct iovec iov[2];
   INIT_IOVEC(handle.hdr, iov, msg, len);
 
-  debugLog(NGB_UDP_AGENT, "UdpAgent::sendMsg the hdr size is %d", sizeof(handle.hdr));
+  debugLog(NGB_UDP_AGENT,
+           "UdpAgent::sendMsg the hdr size is %d", sizeof(handle.hdr));
   struct msghdr hdr = {0};
   INIT_IOVEC_MSG(hdr, iov, handle.src);
 
