@@ -35,10 +35,13 @@ static ValueParser* createValueParser(NGB_DATA_TYPE type)
              "AvpEntry::parseAppToRaw create Octect parser");
     return new OctectValueParser;
   case NGB_UTF8_STRING_TYPE:
-  case NGB_IP_ADDRESS_TYPE:
     debugLog(NGB_CONTAINER,
              "AvpEntry::parseAppToRaw create utf8 parser");
     return new Utf8ValueParser;
+  case NGB_IP_ADDRESS_TYPE:
+    debugLog(NGB_CONTAINER,
+             "AvpEntry::parseAppToRaw create IPaddress parser");
+    return new IPaddressValueParser;
   case NGB_INTEGER32_TYPE:
     debugLog(NGB_CONTAINER,
              "AvpEntry::parseAppToRaw create integer32 parser");

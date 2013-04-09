@@ -31,7 +31,7 @@ AvpTypeList::AvpTypeList()
   avpt_l_.push_back(new AvpType("Integer32",   NGB_INTEGER32_TYPE, 4));
   avpt_l_.push_back(new AvpType("Integer64",   NGB_INTEGER64_TYPE, 8));
   avpt_l_.push_back(new AvpType("Short",   NGB_SHORT_TYPE, 2));
-  avpt_l_.push_back(new AvpType("byte",   NGB_BYTE_TYPE, 1));
+  avpt_l_.push_back(new AvpType("Byte",   NGB_BYTE_TYPE, 1));
 }
 
 AvpTypeList::~AvpTypeList()

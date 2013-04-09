@@ -274,7 +274,7 @@
   <avp name="slaveAction" code="222" length="16">
     <type name="Integer32"/>
   </avp>
-  <avp name="intIP" code="222" length="16">
+  <avp name="intIP" code="222">
     <type name="Integer32"/>
   </avp>
   <avp name="state" code="222">

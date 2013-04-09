@@ -22,5 +22,6 @@
 #include "integer64_value_parser.hh"
 #include "short_value_parser.hh"
 #include "byte_value_parser.hh"
+#include "ipaddress_value_parser.hh"
 
 #endif
