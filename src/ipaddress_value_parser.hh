@@ -40,11 +40,17 @@ class IPaddressValueParser : public ValueParser
     int ipbytes[4];
     char tail = 0;
     int fields;
-    fields = sscanf(valueStr_, "%d.%d.%d.%d %c",
-                    &ipbytes[3], &ipbytes[2], &ipbytes[1], &ipbytes[0], &tail);
+    fields = sscanf(valueStr_,
+                    "%d.%d.%d.%d %c",
+                    &ipbytes[3],
+                    &ipbytes[2],
+                    &ipbytes[1],
+                    &ipbytes[0],
+                    &tail);
     if (fields != 4 || tail != 0) {
       debugLog(NGB_VALUE_PARSER,
-               "IPaddressValueParser::parseAppToRaw fail to convert ip string");
+               "IPaddressValueParser::parseAppToRaw fail to convert "
+               "ip string");
       memset(raw, 0, sizeof(int));
       len = sizeof(int);
       return true;

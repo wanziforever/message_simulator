@@ -36,6 +36,7 @@ extern const int NGB_RUN_ITEM;
 extern const int NGB_MESSAGE;
 extern const int NGB_CONTAINER;
 extern const int NGB_VALUE_PARSER;
+extern const int NGB_TCP_AGENT;
 
 #endif
 

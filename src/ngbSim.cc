@@ -22,7 +22,6 @@
 #include "dictionary_manager.hh"
 #include "config_manager.hh"
 #include "task.hh"
-#include "udp_agent.hh"
 #include "log_mgr.hh"
 #include "log.hh"
 
@@ -30,8 +29,15 @@
 // main
 //---------------------------------------------------------
 
-const std::string LOG_FILE_NAME = "debuglog";
+#ifdef UDP
+#include "udp_agent.hh"
 UdpAgent *g_udp_agent = 0;
+#elif defined TCP
+#include "tcp_agent.hh"
+TcpAgent *g_tcp_agent = 0;
+#endif
+
+const std::string LOG_FILE_NAME = "debuglog";
 DictionaryManager *dictMgr = 0;
 
 int main(int argc, char *argv[])
@@ -49,8 +55,22 @@ int main(int argc, char *argv[])
            ConfigManager::getDestPort());
   std::cout << "++--------------------------------++" << std::endl;
   std::cout << ConfigManager::getDisplayData() << std::endl;
+#ifdef UDP
+  std::cout <<" == UDP == "<< std::endl;
   g_udp_agent = new UdpAgent();
   g_udp_agent->init(ConfigManager::getLocalPort());
+#elif defined TCP
+  std::cout <<" == TCP == ";fflush(stdout);
+  g_tcp_agent = new TcpAgent();
+  g_tcp_agent->init(ConfigManager::getLocalPort());
+  if (!g_tcp_agent->tcpConnect(ConfigManager::getDestAddress().c_str(),
+                            ConfigManager::getDestPort())) {
+    std::cout << "fail to connect!" << std::endl;;
+    return false;
+  }
+  std::cout << "connection established" << std::endl;
+  
+#endif
   dictMgr = new DictionaryManager;
   dictMgr->init("dictionary.xml");
   Task *task = new Task(ConfigManager::getTask());
@@ -62,6 +82,10 @@ int main(int argc, char *argv[])
   
   if (dictMgr)     delete dictMgr;
   if (task)        delete task;
+#ifdef UDP
   if (g_udp_agent) delete g_udp_agent;
+#elif defined TCP
+  if (g_tcp_agent) delete g_tcp_agent;
+#endif
   debugLog(NGB_MAIN, "program exit");
 }

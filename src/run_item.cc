@@ -23,10 +23,15 @@
 #include "config_manager.hh"
 #include "utils.hh"
 #include "message.hh"
+#ifdef UDP
 #include "udp_agent.hh"
+extern UdpAgent *g_udp_agent;
+#elif defined TCP
+#include "tcp_agent.hh"
+extern TcpAgent *g_tcp_agent;
+#endif
 
 char g_buf[COMMON_MSG_SIZE]= {0};
-extern UdpAgent *g_udp_agent;
 
 RunItem::RunItem(std::string line)
 {
@@ -122,10 +127,14 @@ bool RunItem::sendMessage()
   
   len = FIX_MESSAGE_CONTENT_SIZE;
   //usleep(500000);
+#ifdef UDP
   g_udp_agent->sendMsg(ConfigManager::getDestAddress().c_str(),
                        ConfigManager::getDestPort(),
                        g_buf,
                        len);
+#elif defined TCP
+  g_tcp_agent->sendMsg(g_buf, len);
+#endif
 
   debugLog(NGB_RUN_ITEM, "RunItem::sendMessage exit...");
   return true;
@@ -138,13 +147,23 @@ bool RunItem::receiveMessage()
   // msg.init();
   // int len = msg.parseRawToApp((char*)g_buf);
   while (1) {
+#ifdef UDP
     if (g_udp_agent->getQueueSize() > 0) {
       break;
     }
+#elif defined TCP
+    if (g_tcp_agent->getQueueSize() > 0) {
+      break;
+    }
+#endif
     usleep(20000);
     debugLog(NGB_RUN_ITEM, "RunItem::receiveMessage waiting for message");
   }
+#ifdef UDP
   Message msg = g_udp_agent->receive();
+#elif defined TCP
+  Message msg = g_tcp_agent->receive();
+#endif
   // TODO: parseRawToApp to be the self handling of the raw data buffer
   msg.parseRawToApp(msg.getRawPtr());
   msg.printDebug();

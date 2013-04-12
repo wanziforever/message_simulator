@@ -20,10 +20,7 @@
 #include "log.hh"
 #include "task.hh"
 #include "config_manager.hh"
-#include "udp_agent.hh"
 #include "message.hh"
-
-extern UdpAgent *g_udp_agent;
 
 Task::Task(std::string path)
 {
@@ -44,23 +41,6 @@ std::string Task::getPath()
 
 bool Task::processTask()
 {
-  // debugLog(NGB_TASK, "Task::processTask enter with path %s", path_.c_str());
-  // struct dfs_msg msg;
-  // bzero(&msg, sizeof(msg));
-  // msg.op = DFS_INPUT_CHUNK;
-  // strcpy(msg.inchk.file_path, "/Media/123456");
-  // msg.inchk.idx = 1;
-  // msg.inchk.size = 30;
-  // msg.inchk.dst_cnt = 2;
-  // const char *ip = ConfigManager::getDestAddress().c_str();
-  // int port = 0;
-  // sscanf(ConfigManager::getDestPort().c_str(), "%d", &port);
-  // if (!g_udp_agent->sendMsg(ip, port, (char*)&msg, sizeof(msg))) {
-  //   debugLog(NGB_TASK, "Task::processTask fail to send message");
-  //   return;
-  // }
-  // debugLog(NGB_TASK, "Task::processTask send message successfully");
-
   if (items_.empty()) {
     debugLog(NGB_TASK, "Task::processTask no Item to run in this task");
     return true;
