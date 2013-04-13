@@ -36,6 +36,17 @@ static const XMLCh *g_xmlch_attribute_type = NULL;
 static const XMLCh *g_xmlch_attribute_length = NULL;
 static const XMLCh *g_xmlch_attribute_quantity = NULL;
 
+// should be initialized after XMLPlatform initialized
+#define INITIALIZE_XMLCH_TAG                                      \
+  g_xmlch_command = XMLString::transcode("command");              \
+  g_xmlch_avp = XMLString::transcode("avp");                      \
+  g_xmlch_avpRule = XMLString::transcode("avprule");              \
+  g_xmlch_grouped = XMLString::transcode("grouped");              \
+  g_xmlch_attribute_name = XMLString::transcode("name");          \
+  g_xmlch_attribute_code = XMLString::transcode("code");          \
+  g_xmlch_attribute_type = XMLString::transcode("type");          \
+  g_xmlch_attribute_length = XMLString::transcode("length");      \
+  g_xmlch_attribute_quantity = XMLString::transcode("quantity");
 
 static XercesDOMParser::ValSchemes gValScheme = XercesDOMParser::Val_Auto;
 
@@ -106,7 +117,8 @@ bool Command::goThroughAllAvps(std::vector<Avp*> &allAvps)
 
 bool Avp::goThroughSelf(std::vector<Avp*> &allAvps)
 {
-  debugLog(NGB_DICT_MGR, "Avp::goThroughSelf for %s enter, quantity = %d",
+debugLog(NGB_DICT_MGR,
+         "Avp::goThroughSelf for %s enter, quantity = %d",
            getName().c_str(), getQuantity());
   for (int i = 0; i < (getQuantity() == 0 ? 1 : getQuantity()); i++) {
     Avp *avp = new Avp((*this));
@@ -139,7 +151,8 @@ std::string Avp::genSignature()
     signature_ = getName();
   }
   debugLog(NGB_DICT_MGR,
-           "Avp::genSignature exit with signature %s",signature_.c_str());
+           "Avp::genSignature exit with signature %s",
+           signature_.c_str());
   return signature_;
 }
 
@@ -221,6 +234,8 @@ DictionaryManager::~DictionaryManager()
   XMLPlatformUtils::Terminate();
 }
 
+
+
 bool DictionaryManager::init(const std::string &dictFile)
 {
   debugLog(NGB_DICT_MGR, "DcitionaryManager::init enter...");
@@ -238,17 +253,7 @@ bool DictionaryManager::init(const std::string &dictFile)
               << StrX(toCatch.getMessage()) << std::endl;
     return false;
   }
-
-  g_xmlch_command = XMLString::transcode("command");
-  g_xmlch_avp = XMLString::transcode("avp");
-  g_xmlch_avpRule = XMLString::transcode("avprule");
-  g_xmlch_grouped = XMLString::transcode("grouped");
-  g_xmlch_attribute_name = XMLString::transcode("name");
-  g_xmlch_attribute_code = XMLString::transcode("code");
-  g_xmlch_attribute_type = XMLString::transcode("type");
-  g_xmlch_attribute_length = XMLString::transcode("length");
-  g_xmlch_attribute_quantity = XMLString::transcode("quantity");
-
+  INITIALIZE_XMLCH_TAG;
   // Create our parser, then attach an error handler to the parser.
   // The parser will call back to methods of the ErrorHandler if it
   // discovers errors during the course of parsing the XML docuemnt.

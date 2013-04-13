@@ -157,8 +157,9 @@ bool RunItem::receiveMessage()
     }
 #endif
     usleep(20000);
-    debugLog(NGB_RUN_ITEM, "RunItem::receiveMessage waiting for message");
+    //debugLog(NGB_RUN_ITEM, "RunItem::receiveMessage waiting for message");
   }
+  debugLog(NGB_RUN_ITEM, "RunItem::receiveMessage get one message");
 #ifdef UDP
   Message msg = g_udp_agent->receive();
 #elif defined TCP

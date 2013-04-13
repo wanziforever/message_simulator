@@ -47,6 +47,10 @@ bool TcpAgent::init(int localPort)
   }
   int optval = 1;
   setsockopt(socket_, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
+  struct linger so_linger;
+  so_linger.l_onoff = 1;
+  so_linger.l_linger = 0;
+  setsockopt(socket_, SOL_SOCKET, SO_LINGER, &so_linger, sizeof(so_linger));
   struct sockaddr_in src_addr;
   bzero((void *)&src_addr, sizeof(src_addr));
   src_addr.sin_family = AF_INET;
@@ -126,6 +130,8 @@ int TcpAgent::writeData(int fd, char* buf, int size)
 
 int TcpAgent::readData(int fd, char *buf, int size)
 {
+  debugLog(NGB_TCP_AGENT,
+           "TcpAgent::readData need read %d byte data", size);
   fd_set fdsr;
   int maxSock = socket_;
   struct timeval tv;
@@ -147,8 +153,9 @@ int TcpAgent::readData(int fd, char *buf, int size)
       // timeout
       continue;
     }
-    debugLog(NGB_TCP_AGENT, "TcpAgent::readData return value is %d", ret);
     len_read = read(fd, buf + offset, left);
+    debugLog(NGB_TCP_AGENT,
+             "TcpAgent::readData return read %d byte data", len_read);
     if (len_read < 0) {
       debugLog(NGB_TCP_AGENT, "TcpAgent::readData fail to read");
       continue;
@@ -160,6 +167,7 @@ int TcpAgent::readData(int fd, char *buf, int size)
     offset += len_read;
     left -= len_read;
   }
+  debugLog(NGB_TCP_AGENT, "TcpAgent::readData %d byte read", offset);
   return offset;
 }
 
@@ -201,9 +209,11 @@ bool TcpAgent::registerReceiver(int fd)
 
 void* TcpAgent::receiverThreadFunc()
 {
+  debugLog(NGB_TCP_AGENT, "TcpAgent::receiverThreadFunc enter");
   tcp_msg_hdr_t hdr;
   Message msg;
   while (1) {
+    debugLog(NGB_TCP_AGENT, "TcpAgent::receiverThreadFunc going to get header");
     int len = readData(socket_, (char*)&hdr, sizeof(hdr));
     if (len != sizeof(hdr)) {
       debugLog(NGB_TCP_AGENT,
@@ -217,13 +227,17 @@ void* TcpAgent::receiverThreadFunc()
                "TcpAgent::receiverThreadFunc invalid payload size");
       return (void *)false;
     }
+    debugLog(NGB_TCP_AGENT, "TcpAgent::receiverThreadFunc going to get body");
     int read_size = readData(socket_, msg.getRawPtr(), payload_size);
     if (read_size != payload_size) {
       debugLog(NGB_TCP_AGENT,
-               "TcpAgent::receiverThreadFunc faatal network error");
+               "TcpAgent::receiverThreadFunc fatal network error");
       return (void *)false;
     }
     recMsgQueue_.push(msg);
+    debugLog(NGB_TCP_AGENT,
+             "TcpAgent::receiverThreadFunc %d message in queue",
+             recMsgQueue_.size());
   }
 }
 
