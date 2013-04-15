@@ -35,6 +35,9 @@ UdpAgent *g_udp_agent = 0;
 #elif defined TCP
 #include "tcp_agent.hh"
 TcpAgent *g_tcp_agent = 0;
+#elif defined TCPD
+#include "tcpd_agent.hh"
+TcpdAgent *g_tcpd_agent = 0;
 #endif
 
 const std::string LOG_FILE_NAME = "debuglog";
@@ -65,11 +68,19 @@ int main(int argc, char *argv[])
   g_tcp_agent->init(ConfigManager::getLocalPort());
   if (!g_tcp_agent->tcpConnect(ConfigManager::getDestAddress().c_str(),
                             ConfigManager::getDestPort())) {
-    std::cout << "fail to connect!" << std::endl;;
+    std::cout << "fail to connect!" << std::endl;
     return false;
   }
   std::cout << "connection established" << std::endl;
-  
+#elif defined TCPD
+  std::cout <<" == TCPD == ";fflush(stdout);
+  g_tcpd_agent = new TcpdAgent();
+  g_tcpd_agent->init(ConfigManager::getLocalPort());
+  if (!g_tcpd_agent->tcpListen()) {
+    std::cout << "fail to connect!" << std::endl;
+    return false;
+  }
+  std::cout << "connection established" << std::endl;
 #endif
   dictMgr = new DictionaryManager;
   dictMgr->init("dictionary.xml");
@@ -89,6 +100,8 @@ int main(int argc, char *argv[])
   if (g_udp_agent) delete g_udp_agent;
 #elif defined TCP
   if (g_tcp_agent) delete g_tcp_agent;
+#elif defined TCPD
+  if (g_tcpd_agent) delete g_tcpd_agent;
 #endif
   debugLog(NGB_MAIN, "program exit");
 }

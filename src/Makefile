@@ -23,6 +23,7 @@ CC = gcc
 MAIN = ngbSim
 TARGET_U  = $(MAIN)udp
 TARGET_T = $(MAIN)tcp
+TARGET_D = $(MAIN)d
 
 UT_TARGET = ngbSim_unittest
 build_root=$(shell pwd)/..
@@ -44,6 +45,7 @@ SRC = \
 	run_item.cc \
 	udp_agent.cc \
 	tcp_agent.cc \
+	tcpd_agent.cc \
 	container.cc \
 	message.cc \
 	avp_type.cc
@@ -51,6 +53,8 @@ SRC = \
 
 OBJ_U = $(addsuffix _u.o, $(basename $(SRC)))
 OBJ_T = $(addsuffix _t.o, $(basename $(SRC)))
+OBJ_D = $(addsuffix _d.o, $(basename $(SRC)))
+
 # also can use
 # OBJ = $(subst .cc, .o, $(SRC))
 
@@ -63,20 +67,28 @@ build_bin = $(build_root)/bin
 
 #
 all: $(build_bin)/$(TARGET_U) \
-	$(build_bin)/$(TARGET_T)
+	$(build_bin)/$(TARGET_T) \
+	$(build_bin)/$(TARGET_D) \
 #	$(build_bin)/$(UT_TARGET)	
 #
 # compile the main function
 $(TARGET_U).o:$(MAIN).cc
 	$(CXX) -DUDP $(INCLUDE_DIR) -c $< -o $@
+
 $(TARGET_T).o:$(MAIN).cc
 	$(CXX) -DTCP $(INCLUDE_DIR) -c $< -o $@
+
+$(TARGET_D).o:$(MAIN).cc
+	$(CXX) -DTCPD $(INCLUDE_DIR) -c $< -o $@
 
 $(OBJ_U):%_u.o:%.cc
 	$(CXX) -DUDP $(INCLUDE_DIR) -c $< -o $@
 
 $(OBJ_T):%_t.o:%.cc
 	$(CXX) -DTCP $(INCLUDE_DIR) -c $< -o $@
+
+$(OBJ_D):%_d.o:%.cc
+	$(CXX) -DTCPD $(INCLUDE_DIR) -c $< -o $@
 
 #$(UT_OBJ):%o:%cc
 #	$(CXX) $(INCLUDE_DIR) -c $< -o $@
@@ -86,6 +98,10 @@ $(build_bin)/$(TARGET_U): $(TARGET_U).o $(OBJ_U)
 	$(CXX) $^ -o $@ $(LIB_DIR) $(LIBS)
 
 $(build_bin)/$(TARGET_T): $(TARGET_T).o $(OBJ_T)
+	@echo "build TCP binary..."
+	$(CXX) $^ -o $@ $(LIB_DIR) $(LIBS)
+
+$(build_bin)/$(TARGET_D): $(TARGET_D).o $(OBJ_D)
 	@echo "build TCP binary..."
 	$(CXX) $^ -o $@ $(LIB_DIR) $(LIBS)
 

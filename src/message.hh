@@ -138,6 +138,7 @@ protected:
 class Message
 {
   friend class TcpAgent;
+  friend class TcpdAgent;
 public:
   // constructor used to read human readable format from file
   // normally used for parsing app to raw format.

@@ -29,6 +29,9 @@ extern UdpAgent *g_udp_agent;
 #elif defined TCP
 #include "tcp_agent.hh"
 extern TcpAgent *g_tcp_agent;
+#elif defined TCPD
+#include "tcpd_agent.hh"
+extern TcpdAgent *g_tcpd_agent;
 #endif
 
 char g_buf[COMMON_MSG_SIZE]= {0};
@@ -138,6 +141,8 @@ bool RunItem::sendMessage()
                        len);
 #elif defined TCP
   g_tcp_agent->sendMsg(g_buf, len);
+#elif defined TCPD
+  g_tcpd_agent->sendMsg(g_buf, len);
 #endif
 
   debugLog(NGB_RUN_ITEM, "RunItem::sendMessage exit...");
@@ -159,6 +164,10 @@ bool RunItem::receiveMessage()
     if (g_tcp_agent->getQueueSize() > 0) {
       break;
     }
+#elif defined TCPD
+    if (g_tcpd_agent->getQueueSize() > 0) {
+      break;
+    }
 #endif
     usleep(20000);
     //debugLog(NGB_RUN_ITEM, "RunItem::receiveMessage waiting for message");
@@ -168,6 +177,8 @@ bool RunItem::receiveMessage()
   Message *msg = g_udp_agent->receive();
 #elif defined TCP
   Message *msg = g_tcp_agent->receive();
+#elif defined TCPD
+  Message *msg = g_tcpd_agent->receive();
 #endif
 
   // TODO: parseRawToApp to be self handling of the raw data buffer

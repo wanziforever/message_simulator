@@ -41,6 +41,7 @@
 #include <fstream>
 #include <sstream>
 #include <sys/param.h>
+#include <algorithm>
 #include "message.hh"
 #include "log.hh"
 #include "ngb_defs.hh"
@@ -49,6 +50,32 @@ extern DictionaryManager *dictMgr;
 std::map<std::string, int> signatureCounter;
 std::map<std::string, RawEntry*> signatureMapping;
 
+// the command field in message file should have the following format
+// command =: XXX_XXX_XXX(R) or command =: YYY_YYY_YYY(A)
+bool parseDirectionMode(const std::string value,
+                        std::string &command,
+                        short &direction)
+{
+  int spos = value.find_first_of("(");
+  int epos = value.find_first_of(")");
+  if (spos == value.npos || epos == value.npos || epos < spos+1) {
+    debugLog(NGB_MESSAGE,
+             "cannot find direction string, use request defualt");
+    direction = REQUEST;
+    command = value;
+    return true;
+  }
+  command = value.substr(0, spos);
+  std::string directionString = value.substr(spos, spos + 1);
+  debugLog(NGB_MESSAGE,
+           "direction string is %s", directionString.c_str());
+  transform(directionString.begin(),
+            directionString.end(),
+            directionString.begin(),
+            ::toupper);
+  direction = (directionString == "A" ? ANSWER : REQUEST);
+  return true;
+}
 // increase the registered signature counter, which is used for more than
 // than one quantities of avps, the counter is used to generate the signature
 // for multiple avp instance for one type
@@ -297,9 +324,9 @@ bool Message::generateMessageAvps()
     RawEntry* r = fetchEntryBySignature(signature);
     if (r == (RawEntry*)-1) {
       debugLog(NGB_ERROR,
-               "Message::generateMessageAvps signature %s not found",
-               signature.c_str());
-      return false;
+               "Message::generateMessageAvps signature %s not found, "
+               "used default", signature.c_str());
+      //return false;
     }
     e->setValue(r != (RawEntry*)-1 ? r->getValue() : std::string(""));
     avpContainer_.appendAvp(e);
@@ -371,7 +398,10 @@ bool Message::parseCommand(std::string entry)
              "Message::readMsgFile the command field cannot be null");
     return false;
   }
-  command_ = value;
+  // get the message mode(direction), request or answer
+  // the mode char follow the command name as COMMAND_NAME(R) or
+  // COMMAND_NAME(A)
+  parseDirectionMode(value, command_, direction_);
   // get and set the command code from dictionary
   std::stringstream(dictMgr->getCommandCode(command_)) >> commandCode_;
   return true;
