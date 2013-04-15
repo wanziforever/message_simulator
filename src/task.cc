@@ -49,7 +49,7 @@ bool Task::processTask()
   for (std::vector<RunItem>::iterator it = items_.begin();
        it != items_.end(); ++it ) {
     if (!(*it).processItem()) {
-      debugLog(NGB_TASK, "Task::processTask processItem fail");
+      debugLog(NGB_ERROR, "Task::processTask processItem fail");
       return false;
     }
   }

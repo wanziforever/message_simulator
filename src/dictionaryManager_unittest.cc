@@ -43,21 +43,21 @@ TEST(DictionaryManager,getNumOfAvp)
   EXPECT_EQ(4,dictMgr.getNumOfAvp());
 }
 
-TEST(DictionaryManager,getAllCommand)
-{
-  DICTIONARY_MANAGER_INIT;
-  int num = dictMgr.getNumOfCommand();
-  Command *commandList = new Command[num];
-  if (!commandList) {
-    std::cout << "memory allocation for comamnd list fail!" << std::endl;
-    return;
-  }
-  if (dictMgr.getAllCommands(commandList)) {
-    std::cout << "Fail to get all commands" << std::endl;
-    return;
-  }
-
-  // make sure to have 2 commands in document
-  EXPECT_EQ("GET_CHUNK", commandList[0].getName());
-  EXPECT_EQ("LOAD_SEED", commandList[1].getName());
-}
+// TEST(DictionaryManager,getAllCommand)
+// {
+//   DICTIONARY_MANAGER_INIT;
+//   int num = dictMgr.getNumOfCommand();
+//   Command *commandList = new Command[num];
+//   if (!commandList) {
+//     std::cout << "memory allocation for comamnd list fail!" << std::endl;
+//     return;
+//   }
+//   if (dictMgr.getAllCommands(commandList)) {
+//     std::cout << "Fail to get all commands" << std::endl;
+//     return;
+//   }
+// 
+//   // make sure to have 2 commands in document
+//   EXPECT_EQ("GET_CHUNK", commandList[0].getName());
+//   EXPECT_EQ("LOAD_SEED", commandList[1].getName());
+// }

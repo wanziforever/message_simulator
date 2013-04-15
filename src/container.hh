@@ -109,11 +109,11 @@ public:
   
   // full fill the avps for all ones in avpList, get full
   // information from dictionary manager object
-  bool fillAvpsWithTypesFromDictionary(std::string cmdName);
+  // bool fillAvpsWithTypesFromDictionary(std::string cmdName);
   // create each avp entries in the container with name and types
   // from dictionary document, the container normally has no entry
   // before calling this menthod
-  bool createAvpsFromDictionary(std::string cmdName);
+  // bool createAvpsFromDictionary(std::string cmdName);
   void print();
   bool parseAppToRaw(char *raw, int &len);
   bool parseRawToApp(char *raw, int &len);

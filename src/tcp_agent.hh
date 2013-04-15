@@ -34,16 +34,20 @@ public:
   int sendMsg(char *msg, int len);
   int getSocket() { return socket_; }
   int getQueueSize();
-  Message receive();
+  Message* receive();
 private:
   int writeData(int fd, char *buf, int size);
-  int readData(int fd, char *buf, int size);
+  int readData(char *buf, int size);
   bool startReceiver();
   bool registerReceiver(int fd);
   void* receiverThreadFunc();
+  bool getMsgWithoutTcpHeader(Message*);
+  bool getMsgWithTcpHeader(Message*);
+
+  // members
   int socket_;
   int epoolfd_;
-  std::queue<Message> recMsgQueue_;
+  std::queue<Message*> recMsgQueue_;
 };
 
 typedef struct tcp_msg_hdr {

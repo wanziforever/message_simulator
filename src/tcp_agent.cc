@@ -25,6 +25,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include "tcp_agent.hh"
+#include "config_manager.hh"
 #include "log.hh"
 
 
@@ -42,7 +43,7 @@ bool TcpAgent::init(int localPort)
   debugLog(NGB_TCP_AGENT,
            "TcpAgent::init enter with local port(%d)", localPort);
   if ((socket_ = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
-    debugLog(NGB_TCP_AGENT, "TcpAgent::int fail to create TCP socket");
+    debugLog(NGB_ERROR, "TcpAgent::int fail to create TCP socket");
     return false;
   }
   int optval = 1;
@@ -57,7 +58,7 @@ bool TcpAgent::init(int localPort)
   src_addr.sin_addr.s_addr = htonl(INADDR_ANY);
   src_addr.sin_port = htons(localPort);
   if (bind(socket_, (struct sockaddr*)&src_addr, sizeof(src_addr))) {
-    debugLog(NGB_TCP_AGENT, "TcpAgent::init fail to bind local");
+    debugLog(NGB_ERROR, "TcpAgent::init fail to bind local");
     return false;
   }
   return true;
@@ -67,7 +68,7 @@ bool TcpAgent::tcpConnect(const char* ip, int port)
 {
   struct sockaddr_in  dest_addr;
   if (!ip) {
-    debugLog(NGB_TCP_AGENT, "TcpAgent::connect invalid ip pointer");
+    debugLog(NGB_ERROR, "TcpAgent::connect invalid ip pointer");
     return false;
   }
   bzero(&dest_addr, sizeof(dest_addr));
@@ -77,7 +78,7 @@ bool TcpAgent::tcpConnect(const char* ip, int port)
   int con_ret = 0;
   con_ret = connect(socket_, (sockaddr*)&dest_addr, sizeof(dest_addr));
   if (con_ret != 0) {
-    debugLog(NGB_TCP_AGENT,
+    debugLog(NGB_ERROR,
              "TcpAgent::connect fail to connect %s, ret %d", ip, con_ret);
     return false;
   }
@@ -100,12 +101,12 @@ int TcpAgent::sendMsg(char *msg, int len)
   int result = 0;
   result = writeData(socket_, (char*)&hdr, sizeof(hdr));
   if (result != sizeof(hdr)) {
-    debugLog(NGB_TCP_AGENT, "TcpAgent::sendMg fail to send header");
+    debugLog(NGB_ERROR, "TcpAgent::sendMg fail to send header");
     return false;
   }
   result = writeData(socket_, msg, len);
   if (result != len) {
-    debugLog(NGB_TCP_AGENT, "TcpAgent::snedMsg fail to send body");
+    debugLog(NGB_ERROR, "TcpAgent::snedMsg fail to send body");
     return false;
   }
   return result;
@@ -119,7 +120,7 @@ int TcpAgent::writeData(int fd, char* buf, int size)
   while (left > 0) {
     len_send = write(socket_, buf + offset, left);
     if (len_send < 0) {
-      debugLog(NGB_TCP_AGENT, "TcpAgent::writeData fail to send message");
+      debugLog(NGB_ERROR, "TcpAgent::writeData fail to send message");
       return false;
     }
     left -= len_send;
@@ -128,7 +129,7 @@ int TcpAgent::writeData(int fd, char* buf, int size)
   return offset;
 }
 
-int TcpAgent::readData(int fd, char *buf, int size)
+int TcpAgent::readData(char *buf, int size)
 {
   debugLog(NGB_TCP_AGENT,
            "TcpAgent::readData need read %d byte data", size);
@@ -147,21 +148,24 @@ int TcpAgent::readData(int fd, char *buf, int size)
     tv.tv_usec = 0;
     ret = select(maxSock + 1, &fdsr,  NULL, NULL, &tv);
     if (ret < 0) {
-      debugLog(NGB_TCP_AGENT, "TcpAgent::readData fail to select");
+      debugLog(NGB_ERROR, "TcpAgent::readData fail to select");
       break;
     } else if (ret == 0) {
       // timeout
       continue;
     }
-    len_read = read(fd, buf + offset, left);
+    len_read = read(socket_, buf + offset, left);
     debugLog(NGB_TCP_AGENT,
-             "TcpAgent::readData return read %d byte data", len_read);
+             "TcpAgent::readData read %d byte this time", len_read);
     if (len_read < 0) {
-      debugLog(NGB_TCP_AGENT, "TcpAgent::readData fail to read");
+      debugLog(NGB_ERROR, "TcpAgent::readData fail to read");
       continue;
     }
+    
     if (len_read == 0) {
-      debugLog(NGB_TCP_AGENT, "TcpAgent::readData read zero data");
+      debugLog(NGB_ERROR,
+               "TcpAgent::readData read zero data, connection may be closed");
+      sleep(3);
       continue;
     }
     offset += len_read;
@@ -176,15 +180,15 @@ int TcpAgent::getQueueSize()
   return recMsgQueue_.size();
 }
 
-Message TcpAgent::receive()
+Message* TcpAgent::receive()
 {
   if (!recMsgQueue_.empty()) {
-    Message msg;
+    Message* msg;
     msg = recMsgQueue_.front();
     recMsgQueue_.pop();
     return msg;
   }
-  return *(Message *)0;
+  return (Message *)-1;
 }
 
 bool TcpAgent::startReceiver()
@@ -207,33 +211,86 @@ bool TcpAgent::registerReceiver(int fd)
   return true;
 }
 
+bool TcpAgent::getMsgWithTcpHeader(Message *msg)
+{
+  debugLog(NGB_TCP_AGENT, "TcpAgent::getMsgWithTcpHeader enter");
+  tcp_msg_hdr_t hdr;
+  int len =0;
+  
+  len = readData((char*)&hdr, sizeof(hdr));
+  if (len != sizeof(hdr)) {
+    debugLog(NGB_ERROR,
+             "TcpAgent::receiverThreadFunc fatal network error");
+    return false;
+  }
+  int ver = ntohs(hdr.ver);
+  int payload_size = 0;
+  payload_size = ntohl(hdr.data_len) - len;
+  if (payload_size <= 0) {
+    debugLog(NGB_ERROR,
+             "TcpAgent::receiverThreadFunc invalid payload size");
+    return false;
+  }
+
+  int got = readData(msg->getRawPtr(), payload_size);
+  if (got != payload_size) {
+    debugLog(NGB_ERROR,
+             "TcpAgent::receiverThreadFunc fatal network error");
+    return (void *)false;
+  }
+
+  debugLog(NGB_TCP_AGENT, "TcpAgent::getMsgWithTcpHeader exit");
+  return true;
+}
+
+bool TcpAgent::getMsgWithoutTcpHeader(Message *msg)
+{
+  debugLog(NGB_TCP_AGENT, "TcpAgent::getMsgWithoutTcpHeader enter");
+
+  int len = readData( msg->getRawPtr(), sizeof(msg->hdr_));
+  if (len != sizeof(dfs_msg_header)) {
+    debugLog(NGB_ERROR,
+             "TcpAgent::receiverThreadFunc fatal network error");
+    return (void *)false;
+  }
+  
+  msg->parseHdrRawToApp(msg->getRawPtr());
+  msg->createAvpsWithNameAndType();
+  
+  int payload_size = 0;
+  payload_size = msg->getBodySize();
+  int got = readData(msg->getRawPtr() + sizeof(msg->hdr_),
+                     payload_size);
+  if (got != payload_size) {
+    debugLog(NGB_ERROR,
+             "TcpAgent::receiverThreadFunc fatal network error");
+    return (void *)false;
+  }
+  
+  debugLog(NGB_TCP_AGENT, "TcpAgent::getMsgWithoutTcpHeader exit");
+  return true;
+}
+
 void* TcpAgent::receiverThreadFunc()
 {
   debugLog(NGB_TCP_AGENT, "TcpAgent::receiverThreadFunc enter");
-  tcp_msg_hdr_t hdr;
-  Message msg;
+  Message *msg = new Message(ANSWER);
   while (1) {
-    debugLog(NGB_TCP_AGENT, "TcpAgent::receiverThreadFunc going to get header");
-    int len = readData(socket_, (char*)&hdr, sizeof(hdr));
-    if (len != sizeof(hdr)) {
-      debugLog(NGB_TCP_AGENT,
-               "TcpAgent::receiverThreadFunc fatal network error");
+    debugLog(NGB_TCP_AGENT,
+             "TcpAgent::receiverThreadFunc going to get header");
+    bool ret = false;
+    if (ConfigManager::isTcpHeaderInResponse()) {
+      ret = getMsgWithTcpHeader(msg);
+    } else {
+      ret = getMsgWithoutTcpHeader(msg);
+    }
+
+    if (!ret) {
+      debugLog(NGB_ERROR,
+               "TcpAgent::receiverThreadFunc fail to get message");
       return (void *)false;
     }
-    int ver = ntohs(hdr.ver);
-    int payload_size = ntohl(hdr.data_len) - len;
-    if (payload_size <= 0) {
-      debugLog(NGB_TCP_AGENT,
-               "TcpAgent::receiverThreadFunc invalid payload size");
-      return (void *)false;
-    }
-    debugLog(NGB_TCP_AGENT, "TcpAgent::receiverThreadFunc going to get body");
-    int read_size = readData(socket_, msg.getRawPtr(), payload_size);
-    if (read_size != payload_size) {
-      debugLog(NGB_TCP_AGENT,
-               "TcpAgent::receiverThreadFunc fatal network error");
-      return (void *)false;
-    }
+    
     recMsgQueue_.push(msg);
     debugLog(NGB_TCP_AGENT,
              "TcpAgent::receiverThreadFunc %d message in queue",

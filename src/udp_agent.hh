@@ -33,14 +33,14 @@ public:
   bool sendMsg(const char *ip, int port, char *msg, int len);
   int getSocket() { return socket_; }
   int getQueueSize();
-  Message receive();
+  Message* receive();
 private:
   bool startReceiver();
   bool registerReceiver(int fd);
   void* receiverThreadFunc();
   int socket_;
   int epollfd_;
-  std::queue<Message> recMsgQueue_;
+  std::queue<Message*> recMsgQueue_;
 };
 
 #endif

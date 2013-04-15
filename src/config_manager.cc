@@ -16,6 +16,7 @@
 #include <fstream>
 #include <unistd.h>
 #include <sys/param.h>
+#include <algorithm>
 #include <sstream>
 #include "log.hh"
 #include "config_manager.hh"
@@ -59,12 +60,12 @@ void ConfigManager::setupParameters()
   while (configStream.getline(line, 256)) {
     string entry = string(line);
     entry = Utils::trim(entry);
-    if (!entry.size() && Utils::isComments(entry)) {
+    if (!entry.size() || Utils::isComments(entry)) {
       continue;
     }
 
     if (!parseParameters(entry)) {
-      debugLog(NGB_CONFIG_MGR, "ConfigManager::setupParameter::"
+      debugLog(NGB_ERROR, "ConfigManager::setupParameter::"
                "Fail to parse parameter for:\n%s", entry.c_str());
       continue;
     }
@@ -101,6 +102,15 @@ int ConfigManager::getLocalPort()
   return port;
 }
 
+bool ConfigManager::isTcpHeaderInResponse()
+{
+  std::string flag;
+  flag = getValueByName("tcp_header_in_response");
+  transform(flag.begin(), flag.end(), flag.begin(), ::toupper);
+  
+  return (flag == "Y" ? true : false);
+}
+
 string ConfigManager::getCWD()
 {
   char path[MAXPATHLEN];
@@ -125,3 +135,5 @@ std::string ConfigManager::getDisplayData()
           getDestAddress().c_str(), getDestPort());
   return std::string(str);
 }
+
+

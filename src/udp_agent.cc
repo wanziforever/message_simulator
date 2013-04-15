@@ -46,7 +46,7 @@ bool UdpAgent::init(int localPort)
   debugLog(NGB_UDP_AGENT,
            "UdpAgent::init enter with local port(%d)", localPort);
   if ((socket_ = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
-    debugLog(NGB_UDP_AGENT, "UdpAgent::init fail to create UDP socket");
+    debugLog(NGB_ERROR, "UdpAgent::init fail to create UDP socket");
     return false;
   }
   // bind local port
@@ -55,7 +55,7 @@ bool UdpAgent::init(int localPort)
   src_addr.sin_port = localPort;
   if (bind(socket_, (struct sockaddr *)&src_addr,
            sizeof(src_addr)) == -1) {
-    debugLog(NGB_UDP_AGENT, "UdpAgent::init fail to bind local");
+    debugLog(NGB_ERROR, "UdpAgent::init fail to bind local");
     return false;
   }
   // start 
@@ -105,7 +105,7 @@ bool UdpAgent::sendMsg(const char *ip, int port, char *msg, int len)
 
   int r = sendmsg(socket_, &hdr, 0/*flags*/);
   if (r == -1) {
-    debugLog(NGB_UDP_AGENT,
+    debugLog(NGB_ERROR,
              "UdpAgent::sendMsg fail to send message, errno(%d)", errno);
     return false;
   }
@@ -120,24 +120,25 @@ bool UdpAgent::sendMsg(const char *ip, int port, char *msg, int len)
 void* UdpAgent::receiverThreadFunc()
 {
   debugLog(NGB_UDP_AGENT, "UdpAgent::receiverThreadFunc enter");
-  Message msg;
+  Message *msg = new Message(ANSWER);
   struct iovec iov[2];
   struct in_addr src;
   udp_header udpheader;
-  INIT_IOVEC(udpheader, iov, msg.getRawPtr(), COMMON_MSG_SIZE);
+  INIT_IOVEC(udpheader, iov, msg->getRawPtr(), COMMON_MSG_SIZE);
   struct msghdr hdr = {0};
   INIT_IOVEC_MSG(hdr, iov, src);
-  while(1) {
+  while (1) {
     int r = recvmsg(socket_, &hdr, 0 /*flags*/);
-    debugLog(NGB_UDP_AGENT, "UdpAgent::receiverThreadFunc got one message");
+    debugLog(NGB_UDP_AGENT,
+             "UdpAgent::receiverThreadFunc got one message");
     // need to convert the seq after receive the message?
     if (r < 1) {
-      debugLog(NGB_UDP_AGENT,
+      debugLog(NGB_ERROR,
                "UdpAgent::receiverThreadFunc received invalid message");
       continue;
     }
+    
     // put the message to message queue
-    // msg.setUdpHeader(udpheader);
     recMsgQueue_.push(msg);
   }
 }
@@ -170,13 +171,13 @@ bool UdpAgent::registerReceiver(int fd)
 }
 
 // a nsync function call
-Message UdpAgent::receive()
+Message* UdpAgent::receive()
 {
   if (!recMsgQueue_.empty()) {
-    Message msg;
+    Message *msg;
     msg = recMsgQueue_.front();
     recMsgQueue_.pop();
     return msg;
   }
-  return *(Message *)0;
+  return (Message *) -1;
 }

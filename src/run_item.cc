@@ -48,7 +48,7 @@ bool RunItem::processItem()
     std::string progress = "TASK MODE (T) -- --> Sending message";
     display(progress);
     if (!sendMessage()) {
-      debugLog(NGB_RUN_ITEM,
+      debugLog(NGB_ERROR,
                "RunITem::processItem fail to send message");
       return false;
     }
@@ -59,7 +59,7 @@ bool RunItem::processItem()
     display(progress);
     receiveMessage();
   } else {
-    debugLog(NGB_RUN_ITEM,
+    debugLog(NGB_ERROR,
              "RunItem::processItem unknown item mode(%s)",
              mode_.c_str());
     return false;
@@ -104,10 +104,10 @@ bool RunItem::sendMessage()
            pathOfMessage_.toString().c_str());
   Message msg(pathOfMessage_.toString());
   if (!msg.init()) {
-    debugLog(NGB_RUN_ITEM, "RunItem::sendMessage, fail to init message");
+    debugLog(NGB_ERROR, "RunItem::sendMessage, fail to init message");
     return false;
   }
-  msg.printRawEntry();
+  msg.printRawEntry(); // print to debuglog
   display(msg.getDisplayData());
   memset(g_buf, 0, COMMON_MSG_SIZE);
   int len = msg.parseAppToRaw((char*)g_buf);
@@ -124,7 +124,11 @@ bool RunItem::sendMessage()
   // msgR.parseRawToApp(g_buf);
   // msgR.printDebug();
   // ////////////////////////// END ////////////////////////////////////
-  
+
+  if (len == -1) {
+    debugLog(NGB_RUN_ITEM, "RunItem::sendMessage fail to parse message");
+    return false;
+  }
   len = FIX_MESSAGE_CONTENT_SIZE;
   //usleep(500000);
 #ifdef UDP
@@ -161,14 +165,17 @@ bool RunItem::receiveMessage()
   }
   debugLog(NGB_RUN_ITEM, "RunItem::receiveMessage get one message");
 #ifdef UDP
-  Message msg = g_udp_agent->receive();
+  Message *msg = g_udp_agent->receive();
 #elif defined TCP
-  Message msg = g_tcp_agent->receive();
+  Message *msg = g_tcp_agent->receive();
 #endif
-  // TODO: parseRawToApp to be the self handling of the raw data buffer
-  msg.parseRawToApp(msg.getRawPtr());
-  msg.printDebug();
-  display(msg.getDisplayData());
+
+  // TODO: parseRawToApp to be self handling of the raw data buffer
+  msg->parseRawToApp(msg->getRawPtr());
+  msg->printDebug();
+  display(msg->getDisplayData());
+  delete msg;
+
   debugLog(NGB_RUN_ITEM, "RunItem::receiveMessage exit...");
   return true;
 }

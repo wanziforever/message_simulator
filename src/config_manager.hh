@@ -45,6 +45,7 @@ public:
   static std::string getDestAddress();
   static int getDestPort();
   static int getLocalPort();
+  static bool isTcpHeaderInResponse();
 };
 
 #endif

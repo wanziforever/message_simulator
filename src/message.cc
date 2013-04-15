@@ -43,7 +43,6 @@
 #include <sys/param.h>
 #include "message.hh"
 #include "log.hh"
-#include "dictionary_manager.hh"
 #include "ngb_defs.hh"
 
 extern DictionaryManager *dictMgr;
@@ -85,7 +84,7 @@ RawEntry* fetchEntryBySignature(std::string signature)
 #define GET_NAME_VALUE_PAIR(entry, name, value)           \
   int pos = entry.find_first_of(SEPARATOR);               \
   if (pos == std::string::npos) {                         \
-    debugLog(NGB_MESSAGE, "Message::GET_NAME_VALUE_PAIR"  \
+    debugLog(NGB_ERROR, "Message::GET_NAME_VALUE_PAIR"  \
              " fail to parse parameter for\n%s",          \
              entry.c_str());                              \
       return false;                                       \
@@ -98,7 +97,7 @@ RawEntry* fetchEntryBySignature(std::string signature)
 #define GET_GROUP_AVP_NAME(entry, name)                 \
   int pos = entry.find_first_of(" ");                   \
   if (pos == std::string::npos) {                       \
-    debugLog(NGB_MESSAGE, "Message::get_group_avp_name" \
+    debugLog(NGB_ERROR, "Message::get_group_avp_name" \
              " fail to parse parameter for\n%s",        \
              entry.c_str());                            \
     return false;                                       \
@@ -236,7 +235,7 @@ bool Message::init()
   // if the path is not provisioned, it is intended to load from
   // dictionary, no need to read message file
   if (path_.size() && !readMsgFile()) {
-    debugLog(NGB_MESSAGE, "Message::init fail to read message file");
+    debugLog(NGB_ERROR, "Message::init fail to read message file");
     return false;
   }
   debugLog(NGB_MESSAGE, "Message::init exit...");
@@ -252,8 +251,9 @@ bool Message::generateMessageAvps()
 {
   debugLog(NGB_CONTAINER, "Message::generateMessageAvps enter");
   Command command;
-  if (!dictMgr || !dictMgr->getCommandByName(command_, &command)) {
-    debugLog(NGB_CONTAINER,
+  if (!dictMgr ||
+      !dictMgr->getCommandByName(command_, &command, direction_)) {
+    debugLog(NGB_ERROR,
              "Message::generateMessageAvps fail to get command");
     return false;
   }
@@ -296,9 +296,10 @@ bool Message::generateMessageAvps()
              signature.c_str());
     RawEntry* r = fetchEntryBySignature(signature);
     if (r == (RawEntry*)-1) {
-      debugLog(NGB_MESSAGE,
+      debugLog(NGB_ERROR,
                "Message::generateMessageAvps signature %s not found",
                signature.c_str());
+      return false;
     }
     e->setValue(r != (RawEntry*)-1 ? r->getValue() : std::string(""));
     avpContainer_.appendAvp(e);
@@ -312,8 +313,9 @@ bool Message::createAvpsWithNameAndType()
 {
   debugLog(NGB_CONTAINER, "Message::createAvpsWithNameAndType enter");
   Command command;
-  if (!dictMgr || !dictMgr->getCommandByName(command_, &command)) {
-    debugLog(NGB_CONTAINER,
+  if (!dictMgr ||
+      !dictMgr->getCommandByName(command_, &command, direction_)) {
+    debugLog(NGB_ERROR,
              "Message::createAvpsWithNameAndType fail to get command");
     return false;
   }
@@ -324,7 +326,7 @@ bool Message::createAvpsWithNameAndType()
   std::vector<Avp*> allAvps;
   command.goThroughAllAvps(allAvps);
 
-  ////// test code to print out all the serialized avps //////
+  //////// test code to print all the serialized avps /////////
   std::string allAvpString = "";
   for (std::vector<Avp*>::iterator ite = allAvps.begin();
        ite != allAvps.end(); ite++) {
@@ -339,12 +341,13 @@ bool Message::createAvpsWithNameAndType()
   debugLog(NGB_MESSAGE,
            "Message::createAvpsWithNameAndType number of avps are %d",
            allAvps.size());
-
+  bodySize_ = 0; // since the function may called twice, reset to 0
   for (std::vector<Avp*>::iterator ite = allAvps.begin();
        ite != allAvps.end(); ite++) {
     AvpEntry* e = new AvpEntry;
     e->setName((*ite)->getName());
     e->setLength((*ite)->getLength());
+    bodySize_ += (*ite)->getLength();
     e->setType((*ite)->getType());
     avpContainer_.appendAvp(e);
   }
@@ -358,13 +361,13 @@ bool Message::parseCommand(std::string entry)
   std::string name, value;
   GET_NAME_VALUE_PAIR(entry, name, value);
   if (name != "command") {
-    debugLog(NGB_MESSAGE,
+    debugLog(NGB_ERROR,
              "Message::readMsgFile cannot get command from message file\n"
              "the command definition should be the first line.");
     return false;
   }
   if (value.empty()) {
-    debugLog(NGB_MESSAGE,
+    debugLog(NGB_ERROR,
              "Message::readMsgFile the command field cannot be null");
     return false;
   }
@@ -408,7 +411,7 @@ bool Message::readMsgFile()
       containerLevels[++currentLevel] = ec;
     } else if (isEndOfGroupAvp(entry)) {
       if (--currentLevel < 0) {
-        debugLog(NGB_MESSAGE,
+        debugLog(NGB_ERROR,
                  "Message::readMsgFile, invalid group termination");
         return false;
       }
@@ -421,7 +424,7 @@ bool Message::readMsgFile()
                "Message::readMsgFile signature for %s is %s",
                e->getName().c_str(), sign.c_str());
       if (!setSignature(sign, e)) {
-        debugLog(NGB_MESSAGE,
+        debugLog(NGB_ERROR,
                  "Message::readMsgFile fail to set signature, duplicated");
         return false;
       }
@@ -465,8 +468,8 @@ int Message::parseAppToRaw(char *raw)
   //   return false;
   // }
   if (!generateMessageAvps()) {
-    debugLog(NGB_MESSAGE, "Message::init fail to fullfillAvps");
-    return false;
+    debugLog(NGB_ERROR, "Message::init fail to fullfillAvps");
+    return -1;
   }
   
   printDebug();
@@ -523,13 +526,13 @@ int Message::parseBodyRawToApp(char *raw)
 {
   debugLog(NGB_MESSAGE, "Message::parseBodyRawToApp enter...");
   if (!createAvpsWithNameAndType()) {
-    debugLog(NGB_MESSAGE,
+    debugLog(NGB_ERROR,
              "Message::parseBodyRawToApp create container avps fail");
   }
   int len = 0;
   avpContainer_.parseRawToApp(raw, len);
   if (!convertToRaw()) {
-    debugLog(NGB_MESSAGE, "fail to convertToRaw");
+    debugLog(NGB_ERROR, "fail to convertToRaw");
     return -1;
   }
   return len;
@@ -558,7 +561,8 @@ bool Message::convertToRaw()
       group_array[++currentLevel] = ec;
     } else if ((*ite)->getType() == "end_of_group") {
       if (--currentLevel < 0) {
-        debugLog(NGB_MESSAGE, "Message::convertToRaw invalid group termination");
+        debugLog(NGB_ERROR,
+                 "Message::convertToRaw invalid group termination");
         return false;
       }
       continue;
@@ -568,6 +572,6 @@ bool Message::convertToRaw()
     }
   }
   printRawEntry();
-  return true;
   debugLog(NGB_MESSAGE, "Message::convertToRaw exit");
+  return true;
 }

@@ -20,6 +20,7 @@
 #include <map>
 #include "utils.hh"
 #include "container.hh"
+#include "dictionary_manager.hh"
 
 // temprarily use for test
 #define DFS_INPUT_CHUNK 11
@@ -136,15 +137,19 @@ protected:
 
 class Message
 {
+  friend class TcpAgent;
 public:
   // constructor used to read human readable format from file
   // normally used for parsing app to raw format.
-  Message(std::string path) : path_(path), commandCode_(0),command_(""),
-                              errorCode_(0) {
+  Message(std::string path, short direction = REQUEST) :
+    path_(path), commandCode_(0),command_(""), errorCode_(0),
+    direction_(direction), bodySize_(0) {
     rootGroupRawEntry_.setRoot(true);
   }
   // constructor normally used for parsing raw to app
-  Message() : path_(""), commandCode_(0), command_(""), errorCode_(0) {
+  Message(short direction = REQUEST) :
+    path_(""), commandCode_(0), command_(""), errorCode_(0),
+    direction_(direction), bodySize_(0) {
     rootGroupRawEntry_.setRoot(true);
   }
   bool init();
@@ -155,16 +160,20 @@ public:
   std::string getDisplayData();
   bool readMsgFile();
   char* getRawPtr() { return (char*)raw_; }
-private:
+  char* getHeader() { return (char*)&hdr_; }
+  int getBodySize() { return bodySize_; }
   int parseHdrRawToApp(char *output);
   int parseHdrAppToRaw(char *output);
   int parseBodyRawToApp(char *output);
   int parseBodyAppToRaw(char *output);
+private:
   bool generateMessageAvps();
   bool fillAvpsWithTypes();
   bool createAvpsWithNameAndType();
   bool parseCommand(std::string entry);
   bool convertToRaw();
+
+  // member variables
   std::string command_;
   short int commandCode_;
   // udp_header hdr_;
@@ -174,6 +183,8 @@ private:
   char raw_[COMMON_MSG_SIZE];
   std::string path_;
   int errorCode_;
+  short direction_; // 1:request, 0:answer
+  int bodySize_;
 };
   
 #endif

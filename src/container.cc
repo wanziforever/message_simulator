@@ -32,33 +32,35 @@ static ValueParser* createValueParser(NGB_DATA_TYPE type)
   switch (type) {
   case NGB_OCTECT_STRING_TYPE:
     debugLog(NGB_CONTAINER,
-             "AvpEntry::parseAppToRaw create Octect parser");
+             "createValueParser create Octect parser");
     return new OctectValueParser;
   case NGB_UTF8_STRING_TYPE:
     debugLog(NGB_CONTAINER,
-             "AvpEntry::parseAppToRaw create utf8 parser");
+             "createValueParser create utf8 parser");
     return new Utf8ValueParser;
   case NGB_IP_ADDRESS_TYPE:
     debugLog(NGB_CONTAINER,
-             "AvpEntry::parseAppToRaw create IPaddress parser");
+             "createValueParser create IPaddress parser");
     return new IPaddressValueParser;
   case NGB_INTEGER32_TYPE:
     debugLog(NGB_CONTAINER,
-             "AvpEntry::parseAppToRaw create integer32 parser");
+             "createValueParser create integer32 parser");
     return new Integer32ValueParser;
   case NGB_INTEGER64_TYPE:
     debugLog(NGB_CONTAINER,
-             "AvpEntry::parseAppToRaw create integer64 parser");
+             "createValueParser create integer64 parser");
     return new Integer64ValueParser;
   case NGB_SHORT_TYPE:
     debugLog(NGB_CONTAINER,
-             "AvpEntry::parseAppToRaw create short parser");
+             "createValueParser create short parser");
     return new ShortValueParser;
   case NGB_BYTE_TYPE:
     debugLog(NGB_CONTAINER,
-             "AvpEntry::parseAppToRaw create byte parser");
+             "createValueParser create byte parser");
     return new ByteValueParser;
   default:
+    debugLog(NGB_ERROR,
+             "createValueParser invalid AVP type");
     assert(0);
   }
 }
@@ -71,7 +73,7 @@ bool AvpEntry::parseAppToRaw(char *raw, int &len)
   AvpType *avpt;
   AvpTypeList al;
   if ((avpt = al.search(getType().c_str())) == NULL) {
-    debugLog(NGB_CONTAINER, "AvpEntry::parseAppToRaw unkown avp type");
+    debugLog(NGB_ERROR, "AvpEntry::parseAppToRaw unkown avp type");
     return false;;
   }
   ValueParser *vp = createValueParser(avpt->getType());
@@ -110,7 +112,7 @@ bool AvpEntry::parseRawToApp(char *raw, int &len)
   char finalValue[1024] = {0};
   char valueOnce[128] = {0};
   if ((avpt = al.search(getType().c_str())) == NULL) {
-    debugLog(NGB_CONTAINER, "AvpEntry::parseRawToApp unkown avp type");
+    debugLog(NGB_ERROR, "AvpEntry::parseRawToApp unkown avp type");
     return false;;
   }
   ValueParser *vp = createValueParser(avpt->getType());
@@ -251,8 +253,9 @@ bool MessageEntryContainer::parseAppToRaw(char *raw, int &offset)
     }
     pos = raw + offset;
     if (!(*it)->parseAppToRaw(pos, len)) {
-      debugLog(NGB_CONTAINER,
+      debugLog(NGB_ERROR,
                "Container::parseAppToRaw avpEntry fail to parseAppToRaw");
+      return false;
     }
     offset += len;
   }
@@ -275,8 +278,9 @@ bool MessageEntryContainer::parseRawToApp(char *raw, int &offset)
     }
     pos = raw + offset;
     if (!(*it)->parseRawToApp(pos, len)) {
-      debugLog(NGB_CONTAINER,
+      debugLog(NGB_ERROR,
                "Container::parseRawToApp avpEntry fail to parseAppToRaw");
+      return false;
     }
     debugLog(NGB_CONTAINER, "Container::parseRawToApp get length %d", len);
     offset += len;
@@ -284,56 +288,56 @@ bool MessageEntryContainer::parseRawToApp(char *raw, int &offset)
   return true;
 }
 
-bool
-MessageEntryContainer::fillAvpsWithTypesFromDictionary(std::string cmdName)
-{
-  debugLog(NGB_CONTAINER,
-           "Container::fillAvpsWithTypesFromDictionary enter...");
-  Command command;
-  if (!dictMgr || !dictMgr->getCommandByName(cmdName, &command)) {
-    debugLog(NGB_CONTAINER,
-             "Container::fillAvpsWithTypesFromDictionary fail to get command");
-    return false;
-  }
-  debugLog(NGB_CONTAINER,
-           "Container::fillAvpsWithTypesFromDictionary command dictionary\n%s",
-           command.toString().c_str());
-  
-  debugLog(NGB_CONTAINER,
-           "Container::fillAvpsWithTypesFromDictionary exit");
-  return true;
-}
+// bool
+// MessageEntryContainer::fillAvpsWithTypesFromDictionary(std::string cmdName)
+// {
+//   debugLog(NGB_CONTAINER,
+//            "Container::fillAvpsWithTypesFromDictionary enter...");
+//   Command command;
+//   if (!dictMgr || !dictMgr->getCommandByName(cmdName, &command)) {
+//     debugLog(NGB_CONTAINER,
+//              "Container::fillAvpsWithTypesFromDictionary fail to get command");
+//     return false;
+//   }
+//   debugLog(NGB_CONTAINER,
+//            "Container::fillAvpsWithTypesFromDictionary command dictionary\n%s",
+//            command.toString().c_str());
+//   
+//   debugLog(NGB_CONTAINER,
+//            "Container::fillAvpsWithTypesFromDictionary exit");
+//   return true;
+// }
 
-bool MessageEntryContainer::createAvpsFromDictionary(std::string cmdName)
-{
-  debugLog(NGB_CONTAINER, "Container::createAvpsFromDictionary enter ...");
-  if (!dictMgr) {
-    debugLog(NGB_CONTAINER,
-             "Container::createAvpsFromDictionary fail to get dictMgr");
-    return false;
-  }
-  Command command;
-  if (!dictMgr->getCommandByName(cmdName, &command)) {
-    debugLog(NGB_CONTAINER,
-             "Container::createAvpsFromDictionary fail to get command");
-    return false;
-  }
-  Avp avp;
-  std::string name;
-  std::string type;
-  int length = 0;
-  int quantity = 0;
-  int numOfAvps = command.getNumOfAvp();
-  for (int i = 0; i < numOfAvps; i++) {
-    command.getAvpByIndex(i, &avp);
-    name = avp.getName();
-    type = avp.getType();
-    length = avp.getLength();
-    quantity = avp.getQuantity();
-    addAvp(name, type, length, quantity);
-  }
-  return true;
-}
+// bool MessageEntryContainer::createAvpsFromDictionary(std::string cmdName)
+// {
+//   debugLog(NGB_CONTAINER, "Container::createAvpsFromDictionary enter ...");
+//   if (!dictMgr) {
+//     debugLog(NGB_CONTAINER,
+//              "Container::createAvpsFromDictionary fail to get dictMgr");
+//     return false;
+//   }
+//   Command command;
+//   if (!dictMgr->getCommandByName(cmdName, &command)) {
+//     debugLog(NGB_CONTAINER,
+//              "Container::createAvpsFromDictionary fail to get command");
+//     return false;
+//   }
+//   Avp avp;
+//   std::string name;
+//   std::string type;
+//   int length = 0;
+//   int quantity = 0;
+//   int numOfAvps = command.getNumOfAvp();
+//   for (int i = 0; i < numOfAvps; i++) {
+//     command.getAvpByIndex(i, &avp);
+//     name = avp.getName();
+//     type = avp.getType();
+//     length = avp.getLength();
+//     quantity = avp.getQuantity();
+//     addAvp(name, type, length, quantity);
+//   }
+//   return true;
+// }
 
 void MessageEntryContainer::print()
 {

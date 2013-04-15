@@ -25,6 +25,11 @@
 #include <vector>
 #include <xercesc/util/XercesDefs.hpp>
 
+enum {
+  REQUEST,
+  ANSWER
+};
+
 class GroupAvp;
 // class reference to the avp tag in dictionary document
 class Avp
@@ -217,12 +222,16 @@ public:
   bool getAllCommands(Command *output);
   // get the number of avp definitions from the XML document
   int getNumOfAvp();
-  bool getCommandByName(std::string name, Command *output);
+  bool getCommandByName(std::string name,
+                        Command *output,
+                        short direction);
   std::string getCommandName(std::string cmdCode);
   std::string getCommandCode(std::string cmdName);
 
 private:
-  bool getOneCommand(const xercesc::DOMNode *n, Command *output);
+  bool getOneCommand(const xercesc::DOMNode *n,
+                     Command *output,
+                     short direction);
   // get number of tag definitions by given name in XML document
   int getNumOfTagByName(const XMLCh *name);
   // get the avp tag by the given avp name
@@ -231,6 +240,9 @@ private:
   xercesc::DOMNode* getRootDictionaryNode();
   Avp* parseAvp(xercesc::DOMNode *n);
   GroupAvp* parseGroupAvp(xercesc::DOMNode *n);
+  xercesc::DOMNode*
+  getDirectionNode(const xercesc::DOMNode *commandNode,
+                                     short direction);
 
   // members
   xercesc::XercesDOMParser *parser_;

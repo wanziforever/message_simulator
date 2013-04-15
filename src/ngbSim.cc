@@ -53,7 +53,7 @@ int main(int argc, char *argv[])
            ConfigManager::getTask().c_str(),
            ConfigManager::getDestAddress().c_str(),
            ConfigManager::getDestPort());
-  std::cout << "++--------------------------------++" << std::endl;
+  std::cout << "++----------- START --------------++" << std::endl;
   std::cout << ConfigManager::getDisplayData() << std::endl;
 #ifdef UDP
   std::cout <<" == UDP == "<< std::endl;
@@ -75,10 +75,13 @@ int main(int argc, char *argv[])
   dictMgr->init("dictionary.xml");
   Task *task = new Task(ConfigManager::getTask());
   if (!task->init()) {
-    debugLog(NGB_MAIN,
+    debugLog(NGB_ERROR,
              "task initialization fail for %s", task->getPath().c_str());
   }
+
   task->processTask();
+
+  std::cout << "++--------- COMPLETED ------------++" << std::endl;
   
   if (dictMgr)     delete dictMgr;
   if (task)        delete task;
