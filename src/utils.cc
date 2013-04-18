@@ -16,6 +16,7 @@
 // define the util tools for NGB project
 
 #include <sstream>
+#include <sys/time.h>
 #include "log.hh"
 #include "utils.hh"
 
@@ -112,6 +113,14 @@ std::string makeDuplicate(const std::string &str, int x)
     y++;
   }
   return newstr;
+}
+
+unsigned long long getLlongLongRandom()
+{
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
+  unsigned long long time = tv.tv_sec * 1000000 + tv.tv_usec;
+  return time;
 }
 
 UTILS_NAMESPACE_END

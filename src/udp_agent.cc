@@ -52,10 +52,12 @@ bool UdpAgent::init(int localPort)
   // bind local port
   struct sockaddr_in src_addr;
   src_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-  src_addr.sin_port = localPort;
+  src_addr.sin_family = AF_INET;
+  src_addr.sin_port = htons(localPort);
   if (bind(socket_, (struct sockaddr *)&src_addr,
            sizeof(src_addr)) == -1) {
-    debugLog(NGB_ERROR, "UdpAgent::init fail to bind local");
+      debugLog(NGB_ERROR,
+               "UdpAgent::init fail to bind local, errno is %d", errno);
     return false;
   }
   // start 
@@ -96,6 +98,8 @@ bool UdpAgent::sendMsg(const char *ip, int port, char *msg, int len)
   mhandle handle;
   NGB_CREATE_MSG_HEADER(handle, ip, port);
   struct iovec iov[2];
+  handle.hdr.seq = Utils::getLlongLongRandom();
+
   INIT_IOVEC(handle.hdr, iov, msg, len);
 
   debugLog(NGB_UDP_AGENT,

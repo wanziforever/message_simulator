@@ -83,5 +83,6 @@ int binaryToAscii(char*, int, char*);
 std::string intToString(int number);
 int stringToInt(std::string number);
 std::string makeDuplicate(const std::string &str, int x);
+unsigned long long getLlongLongRandom();
 UTILS_NAMESPACE_END
 #endif
