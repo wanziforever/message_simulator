@@ -27,19 +27,22 @@
 class UdpAgent
 {
 public:
-  UdpAgent() : socket_(0) {};
+  UdpAgent() : socket_(0), totalCounter_(0) {};
   ~UdpAgent();
   bool init(int localPort);
   bool sendMsg(const char *ip, int port, char *msg, int len);
   int getSocket() { return socket_; }
   int getQueueSize();
   Message* receive();
+  unsigned long long getTotalCounter() { return totalCounter_; }
+  void clearQueue();
 private:
   bool startReceiver();
   bool registerReceiver(int fd);
   void* receiverThreadFunc();
   int socket_;
   int epollfd_;
+  unsigned long long totalCounter_;
   std::queue<Message*> recMsgQueue_;
 };
 

@@ -46,6 +46,7 @@ public:
   static int getDestPort();
   static int getLocalPort();
   static bool isTcpHeaderInResponse();
+  static int getExpectedTPS();
 };
 
 #endif

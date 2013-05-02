@@ -13,6 +13,9 @@
 // Author: wangliang8@hisense.com (Denny Wang)
 // History: created @2012/10/10
 
+#ifndef NGB_TASK_H__
+#define NGB_TASK_H__
+
 #include <iostream>
 #include <vector>
 #include "run_item.hh"
@@ -24,14 +27,20 @@ public:
   Task();
   Task(std::string path);
   // main interface for run the task
-  bool processTask();
+  unsigned long long processTask();
   bool init();
   std::string getPath();
-  
+  unsigned long long getMsgReceived();
+  unsigned long long getMsgSend();
+  std::string toString();
 private:
   // read the task file and setup the item list which need to run
   bool setupRunItems();
+  bool setupPerformanceData();
   Utils::Path path_;
   std::vector<RunItem> items_;
+  unsigned long long sendCounter_;
+  unsigned long long receivedCounter_;
 };
 
+#endif

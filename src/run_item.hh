@@ -17,7 +17,9 @@
 #define NGB_RUN_ITEM_H__
 
 #include "utils.hh"
+#include "perf_config_manager.hh"
 
+class Message;
 class RunItem
 {
 public:
@@ -29,10 +31,18 @@ public:
     mode_ = item.mode_;
     timeOut_ = item.timeOut_;
     pathOfMessage_ = item.pathOfMessage_;
+    counter_ = item.counter_;
+    hasBeenParsed_ = item.hasBeenParsed_;
+    msg_ = item.msg_;
   }
   void display(std::string information);
-  ~RunItem() {}
+  ~RunItem();
   bool processItem();
+  bool setupPerformanceData();
+  unsigned long long getCounter() { return counter_; }
+  std::string getMode() { return mode_; }
+  std::string toString();
+  Message* getMsg() { return msg_; }
 private:
   // parse the input line of string into parameters
   bool setupRunItems(std::string line);
@@ -41,9 +51,15 @@ private:
   // receive message from message queue, and parse it to readable
   // format, save the raw and readable format data to disk
   bool receiveMessage();
+
+  bool updatePerformanceData(Message *msg);
   std::string mode_; // Send or Receive
   int timeOut_;
   Utils::Path pathOfMessage_;
+  PerformanceConf pconf_;
+  unsigned long long counter_;
+  bool hasBeenParsed_;
+  Message* msg_;
 };
 
 #endif

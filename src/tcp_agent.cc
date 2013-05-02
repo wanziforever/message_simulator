@@ -28,6 +28,9 @@
 #include "config_manager.hh"
 #include "log.hh"
 
+static pthread_mutex_t tcp_queue_mutex = PTHREAD_MUTEX_INITIALIZER;
+#define TCP_QUEUE_LOCK()  pthread_mutex_lock(&tcp_queue_mutex)
+#define TCP_QUEUE_UNLOCK()  pthread_mutex_unlock(&tcp_queue_mutex)
 
 typedef void* (TcpAgent::*Thread2Ptr)(void);
 typedef void* (*PthreadPtr)(void*);
@@ -182,12 +185,15 @@ int TcpAgent::getQueueSize()
 
 Message* TcpAgent::receive()
 {
+  TCP_QUEUE_LOCK();
   if (!recMsgQueue_.empty()) {
     Message* msg;
     msg = recMsgQueue_.front();
     recMsgQueue_.pop();
+    TCP_QUEUE_UNLOCK();
     return msg;
   }
+  TCP_QUEUE_UNLOCK();
   return (Message *)-1;
 }
 
@@ -290,11 +296,21 @@ void* TcpAgent::receiverThreadFunc()
                "TcpAgent::receiverThreadFunc fail to get message");
       return (void *)false;
     }
-    
+
+    TCP_QUEUE_LOCK();
     recMsgQueue_.push(msg);
+    totalCounter_++;
+    TCP_QUEUE_UNLOCK();
     debugLog(NGB_TCP_AGENT,
              "TcpAgent::receiverThreadFunc %d message in queue",
              recMsgQueue_.size());
   }
 }
 
+void TcpAgent::clearQueue()
+{
+  TCP_QUEUE_LOCK();
+  std::queue<Message*> empty;
+  std::swap(recMsgQueue_, empty);
+  TCP_QUEUE_UNLOCK();
+}

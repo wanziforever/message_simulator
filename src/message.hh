@@ -79,7 +79,8 @@ class RawEntryContainer;
 class RawEntry
 {
 public:
-  RawEntry() : name_(""), value_(""), parent_(0), deepth_(0) {}
+  RawEntry() : name_(""), value_(""), parent_(0), deepth_(0),
+               offset_(0) , avpEntry_(0){}
   ~RawEntry() {}
   void setName(std::string name) { name_ = name; }
   void setValue(std::string value) { value_ = value; }
@@ -93,13 +94,16 @@ public:
   virtual std::string toString(int numOfIndent = 0);
   virtual std::string getDisplayData();
   std::string generateSignature();
-  
+  void setAvpEntryLink(AvpEntry* e) { avpEntry_ = e; }
+  AvpEntry* getAvpEntryLink() { return avpEntry_; }
 protected:
   std::string name_;
   std::string value_;
   GroupRawEntry* parent_;
   int deepth_;
   std::string signature_;
+  int offset_;
+  AvpEntry* avpEntry_;
 };
 
 class RawEntryContainer
@@ -144,13 +148,13 @@ public:
   // normally used for parsing app to raw format.
   Message(std::string path, short direction = REQUEST) :
     path_(path), commandCode_(0),command_(""), errorCode_(0),
-    direction_(direction), bodySize_(0) {
+    direction_(direction), bodySize_(0), parseAppToRawDone_(0) {
     rootGroupRawEntry_.setRoot(true);
   }
   // constructor normally used for parsing raw to app
   Message(short direction = REQUEST) :
     path_(""), commandCode_(0), command_(""), errorCode_(0),
-    direction_(direction), bodySize_(0) {
+    direction_(direction), bodySize_(0), parseAppToRawDone_(0) {
     rootGroupRawEntry_.setRoot(true);
   }
   bool init();
@@ -167,6 +171,10 @@ public:
   int parseHdrAppToRaw(char *output);
   int parseBodyRawToApp(char *output);
   int parseBodyAppToRaw(char *output);
+  std::string getPath() { return path_; }
+  void updateEntryBySignature(std::string signature,
+                              std::string value);
+
 private:
   bool generateMessageAvps();
   bool fillAvpsWithTypes();
@@ -186,6 +194,13 @@ private:
   int errorCode_;
   short direction_; // 1:request, 0:answer
   int bodySize_;
+  bool parseAppToRawDone_;
+
 };
-  
+
+typedef struct {
+  RawEntry* entry;
+  int offset;
+} RawEntryMappingInfo;
+
 #endif

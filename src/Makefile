@@ -24,12 +24,14 @@ MAIN = ngbSim
 TARGET_U  = $(MAIN)udp
 TARGET_T = $(MAIN)tcp
 TARGET_D = $(MAIN)d
+TARGET_PERF_U = ngbPerfudp
+TARGET_PERF_T = ngbPerftcp
 
 UT_TARGET = ngbSim_unittest
 build_root=$(shell pwd)/..
 INCLUDE_DIR = -I. -I$(build_root)/inc
 LIB_DIR = -L$(build_root)/lib
-LIBS    = -lxerces-c -lpthread
+LIBS    = -lxerces-c -lpthread -lcurses
 # gtest library with main function for unit test
 GTEST_LIB_MAIN_STATIC = $(build_root)/lib/gtest_main.a
 
@@ -48,28 +50,33 @@ SRC = \
 	tcpd_agent.cc \
 	container.cc \
 	message.cc \
-	avp_type.cc
+	avp_type.cc \
+	perf_config_manager.cc 
 
+
+PERF_SRC = view.cc \
+	load.cc
 
 OBJ_U = $(addsuffix _u.o, $(basename $(SRC)))
 OBJ_T = $(addsuffix _t.o, $(basename $(SRC)))
 OBJ_D = $(addsuffix _d.o, $(basename $(SRC)))
+OBJ_PERF_U = $(addsuffix _u.o, $(basename $(PERF_SRC)))
+OBJ_PERF_T = $(addsuffix _t.o, $(basename $(PERF_SRC)))
 
 # also can use
 # OBJ = $(subst .cc, .o, $(SRC))
 
-# unit test source code list
-#UT_SRC = \
-#	dictionaryManager_unittest.cc
-#UT_OBJ = $(addsuffix .o, $(basename $(UT_SRC)))
-
 build_bin = $(build_root)/bin
 
 #
-all: $(build_bin)/$(TARGET_U) \
-	$(build_bin)/$(TARGET_T) \
-	$(build_bin)/$(TARGET_D) \
-#	$(build_bin)/$(UT_TARGET)	
+#all: $(build_bin)/$(TARGET_U) \
+#	$(build_bin)/$(TARGET_T) \
+#	$(build_bin)/$(TARGET_D) \
+#	$(build_bin)/$(TARGET_PERF_U) \
+#	$(build_bin)/$(TARGET_PERF_T)
+
+all: $(build_bin)/$(TARGET_PERF_U)
+
 #
 # compile the main function
 $(TARGET_U).o:$(MAIN).cc
@@ -81,6 +88,12 @@ $(TARGET_T).o:$(MAIN).cc
 $(TARGET_D).o:$(MAIN).cc
 	$(CXX) -DTCPD $(INCLUDE_DIR) -c $< -o $@
 
+$(TARGET_PERF_U).o:ngbPerf.cc
+	$(CXX) -DUDP $(INCLUDE_DIR) -c $< -o $@
+
+$(TARGET_PERF_T).o:ngbPerf.cc
+	$(CXX) -DTCP $(INCLUDE_DIR) -c $< -o $@
+
 $(OBJ_U):%_u.o:%.cc
 	$(CXX) -DUDP $(INCLUDE_DIR) -c $< -o $@
 
@@ -89,6 +102,12 @@ $(OBJ_T):%_t.o:%.cc
 
 $(OBJ_D):%_d.o:%.cc
 	$(CXX) -DTCPD $(INCLUDE_DIR) -c $< -o $@
+
+$(OBJ_PERF_U):%_u.o:%.cc
+	$(CXX) -DUDP $(INCLUDE_DIR) -c $< -o $@
+
+$(OBJ_PERF_T):%_t.o:%.cc
+	$(CXX) -DTCP $(INCLUDE_DIR) -c $< -o $@
 
 #$(UT_OBJ):%o:%cc
 #	$(CXX) $(INCLUDE_DIR) -c $< -o $@
@@ -105,9 +124,14 @@ $(build_bin)/$(TARGET_D): $(TARGET_D).o $(OBJ_D)
 	@echo "build TCP binary..."
 	$(CXX) $^ -o $@ $(LIB_DIR) $(LIBS)
 
-#$(build_bin)/$(UT_TARGET): $(UT_OBJ) $(OBJ)
-#	@echo "build Unit test binary..."
-#	$(CXX) $^ -o $@ $(LIB_DIR) $(LIBS) $(GTEST_LIB_MAIN_STATIC)
+$(build_bin)/$(TARGET_PERF_U): $(TARGET_PERF_U).o $(OBJ_PERF_U) $(OBJ_U)
+	@echo "build UDP PERFORMANCE binary..."
+	@echo $(OBJ_PERF_U)
+	$(CXX) $^ -o $@ $(LIB_DIR) $(LIBS)
+
+$(build_bin)/$(TARGET_PERF_T): $(TARGET_PERF_T).o $(OBJ_PERF_T) $(OBJ_T)
+	@echo "build TCP PERFORMANCE binary..."
+	$(CXX) $^ -o $@ $(LIB_DIR) $(LIBS)
 
 clean:
 	rm -rf *.o

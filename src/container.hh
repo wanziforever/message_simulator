@@ -23,7 +23,7 @@ class AvpEntry
 {
 public:
   AvpEntry() : type_(""), value_(""), avpName_(""), avpCode_(0),
-            length_(1), quantity_(1) {} 
+               length_(1), quantity_(1), data_(0) {} 
   virtual bool parseAppToRaw(char *raw, int &len);
   virtual bool parseRawToApp(char *raw, int &len);
   virtual std::string toString(int numOfIndent = 0);
@@ -49,6 +49,7 @@ public:
   void setSignature(std::string signature) { signature_ = signature; }
   std::string getSignature() { return signature_; }
   std::string getParentSignature();
+  char* getDataPointer() {return data_; }
 protected:
   std::string type_;
   std::string value_;
@@ -58,6 +59,7 @@ protected:
   int length_;
   int quantity_;
   int deepth_;
+  char* data_; // pointer in the raw message for this avp
 };
 
 class EntryContainer

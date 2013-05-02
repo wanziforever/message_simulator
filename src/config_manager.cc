@@ -90,16 +90,23 @@ string ConfigManager::getDestAddress()
 
 int ConfigManager::getDestPort()
 {
-  int port;
+  int port = 0;
   stringstream(getValueByName("dest_port")) >> port;
   return port;
 }
 
 int ConfigManager::getLocalPort()
 {
-  int port;
+  int port = 0;
   stringstream( getValueByName("local_port")) >> port;
   return port;
+}
+
+int ConfigManager::getExpectedTPS()
+{
+  int tps = 0;
+  stringstream(getValueByName("expected_tps")) >> tps;
+  return tps;
 }
 
 bool ConfigManager::isTcpHeaderInResponse()

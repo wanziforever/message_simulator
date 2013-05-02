@@ -15,11 +15,11 @@
 
 // define the util tools for NGB project
 
-#include <sstream>
-#include <sys/time.h>
 #include "log.hh"
 #include "utils.hh"
-
+#include <sstream>
+#include <sys/time.h>
+#include <unistd.h>
 
 UTILS_NAMESPACE_START
 
@@ -93,9 +93,24 @@ std::string intToString(int number)
   return oss.str();
 }
 
+std::string longlongToString(long long number)
+{
+  std::stringstream oss;
+  oss << number;
+  return oss.str();
+}
+
 int stringToInt(std::string number)
 {
   int ret = 0;
+  std::istringstream ss(number);
+  ss >> ret;
+  return ret;
+}
+
+long long stringToLongLong(std::string number)
+{
+  long long ret = 0;
   std::istringstream ss(number);
   ss >> ret;
   return ret;
@@ -115,12 +130,17 @@ std::string makeDuplicate(const std::string &str, int x)
   return newstr;
 }
 
-unsigned long long getLlongLongRandom()
+unsigned long long getTimeOfDayinUsec()
 {
   struct timeval tv;
   gettimeofday(&tv, NULL);
   unsigned long long time = tv.tv_sec * 1000000 + tv.tv_usec;
   return time;
+}
+
+bool fileExist(std::string &path)
+{
+  return (access(path.c_str(), F_OK) != -1);
 }
 
 UTILS_NAMESPACE_END

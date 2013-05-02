@@ -18,12 +18,16 @@
 // in the specified XML document.
 
 #include <stdio.h>
+#include <signal.h>
+#include <stdlib.h>
 #include "ngb_defs.hh"
 #include "dictionary_manager.hh"
 #include "config_manager.hh"
 #include "task.hh"
 #include "log_mgr.hh"
 #include "log.hh"
+#include "view.hh"
+#include "load.hh"
 
 //---------------------------------------------------------
 // main
@@ -43,10 +47,15 @@ TcpdAgent *g_tcpd_agent = 0;
 const std::string LOG_FILE_NAME = "debuglog";
 DictionaryManager *dictMgr = 0;
 
+bool in_performance_environment = true;
+
 bool SYSTEM_STOP = false;
 
-bool in_performance_environment = false;
+void handleSignal();
+void over();
 
+View *view = 0;
+Load *load = 0;
 int main(int argc, char *argv[])
 {
   LogMgr log_manager(LOG_FILE_NAME);
@@ -55,19 +64,17 @@ int main(int argc, char *argv[])
   debugLog(NGB_MAIN, "current working directory(%s),\n"
            " task(%s),"
            " dest_address(%s),"
-           " dest_port",
+           " dest_port(%d)",
            ConfigManager::getCWD().c_str(),
            ConfigManager::getTask().c_str(),
            ConfigManager::getDestAddress().c_str(),
            ConfigManager::getDestPort());
-  std::cout << "++----------- START --------------++" << std::endl;
-  std::cout << ConfigManager::getDisplayData() << std::endl;
 #ifdef UDP
-  std::cout <<" == UDP == "<< std::endl;
+  //std::cout <<" == UDP == "<< std::endl;
   g_udp_agent = new UdpAgent();
   g_udp_agent->init(ConfigManager::getLocalPort());
 #elif defined TCP
-  std::cout <<" == TCP == ";fflush(stdout);
+  //std::cout <<" == TCP == ";fflush(stdout);
   g_tcp_agent = new TcpAgent();
   g_tcp_agent->init(ConfigManager::getLocalPort());
   if (!g_tcp_agent->tcpConnect(ConfigManager::getDestAddress().c_str(),
@@ -75,31 +82,45 @@ int main(int argc, char *argv[])
     std::cout << "fail to connect!" << std::endl;
     return false;
   }
-  std::cout << "connection established" << std::endl;
+  //std::cout << "connection established" << std::endl;
 #elif defined TCPD
-  std::cout <<" == TCPD == ";fflush(stdout);
+  //std::cout <<" == TCPD == ";fflush(stdout);
   g_tcpd_agent = new TcpdAgent();
   g_tcpd_agent->init(ConfigManager::getLocalPort());
   if (!g_tcpd_agent->tcpListen()) {
     std::cout << "fail to connect!" << std::endl;
     return false;
   }
-  std::cout << "connection established" << std::endl;
+  //std::cout << "connection established" << std::endl;
 #endif
   dictMgr = new DictionaryManager;
   dictMgr->init("dictionary.xml");
+  handleSignal();
   Task *task = new Task(ConfigManager::getTask());
   if (!task->init()) {
     debugLog(NGB_ERROR,
              "task initialization fail for %s", task->getPath().c_str());
+    return -1;
   }
+  load = new Load;
+  load->start(task, ConfigManager::getExpectedTPS());
+  //task->processTask();
+  //
+  //std::cout << "++--------- COMPLETED ------------++" << std::endl;
+  view = new View;
+  view->start();
 
-  task->processTask();
+  over();
+  debugLog(NGB_MAIN, "program exit");
+  return 0;
+}
 
-  std::cout << "++--------- COMPLETED ------------++" << std::endl;
-  
+void over()
+{
   if (dictMgr)     delete dictMgr;
-  if (task)        delete task;
+  if (view)        delete view;
+  if (load)        delete load;
+  //if (task)        delete task;
 #ifdef UDP
   if (g_udp_agent) delete g_udp_agent;
 #elif defined TCP
@@ -107,5 +128,18 @@ int main(int argc, char *argv[])
 #elif defined TCPD
   if (g_tcpd_agent) delete g_tcpd_agent;
 #endif
-  debugLog(NGB_MAIN, "program exit");
+}
+
+void system_stop(int s)
+{
+  SYSTEM_STOP = true;
+  sleep(2);
+  over();
+  debugLog(NGB_MAIN, "program stop");
+  exit(1);
+}
+
+void handleSignal()
+{
+  signal(SIGINT, system_stop);
 }

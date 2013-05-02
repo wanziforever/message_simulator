@@ -38,6 +38,7 @@
 
 #include <stdint.h>
 #include <string.h>
+#include <unistd.h>
 #include <fstream>
 #include <sstream>
 #include <sys/param.h>
@@ -95,7 +96,8 @@ bool setSignature(std::string sign, RawEntry *rawEntry)
   if (signatureMapping.find(sign) != signatureMapping.end()) {
     return false;
   }
-  signatureMapping.insert(std::pair<std::string, RawEntry*>(sign, rawEntry));
+  signatureMapping.insert(std::pair<std::string,
+                          RawEntry*>(sign, rawEntry));
   return true;
 }
 
@@ -124,7 +126,7 @@ RawEntry* fetchEntryBySignature(std::string signature)
 #define GET_GROUP_AVP_NAME(entry, name)                 \
   int pos = entry.find_first_of(" ");                   \
   if (pos == std::string::npos) {                       \
-    debugLog(NGB_ERROR, "Message::get_group_avp_name" \
+    debugLog(NGB_ERROR, "Message::get_group_avp_name"   \
              " fail to parse parameter for\n%s",        \
              entry.c_str());                            \
     return false;                                       \
@@ -328,12 +330,29 @@ bool Message::generateMessageAvps()
                "used default", signature.c_str());
       //return false;
     }
+    e->setSignature(signature);
+    r->setAvpEntryLink(e); // for performance implementation
     e->setValue(r != (RawEntry*)-1 ? r->getValue() : std::string(""));
     avpContainer_.appendAvp(e);
-
   }
   return true;
   //return avpContainer_.fillAvpsWithTypesFromDictionary(command_);
+}
+
+void Message::updateEntryBySignature(std::string signature, std::string value)
+{
+  if (signatureMapping.find(signature) == signatureMapping.end()) {
+    debugLog(NGB_CONTAINER, "Message::updatePerformanceData "
+             "fail to find the signature %s", signature.c_str());
+    return;
+  }
+
+  RawEntry *r = signatureMapping[signature];
+  AvpEntry* e = r->getAvpEntryLink();
+  e->setValue(value);
+  char *raw = e->getDataPointer();
+  int len = 0;
+  e->parseAppToRaw(raw, len);
 }
 
 bool Message::createAvpsWithNameAndType()
@@ -486,28 +505,33 @@ std::string Message::getDisplayData()
 void Message::printDebug()
 {
   debugLog(NGB_MESSAGE,
-           "print all the avps for command %s", command_.c_str());
+           "print all debug avps for command %s", command_.c_str());
   avpContainer_.print();
 }
 
 int Message::parseAppToRaw(char *raw)
 {
   debugLog(NGB_MESSAGE, "Message::parseAppToRaw enter...");
-  // if (!fillAvpsWithTypes()) {
-  //   debugLog(NGB_MESSAGE, "Message::init fail to fullfillAvps");
-  //   return false;
-  // }
+
+  if (parseAppToRawDone_) {
+    return 0;
+  }
+
+  //while (1) {
+  //  debugLog(NGB_MESSAGE, "Message::parseAppToRaw enter...");
+  //}
+
   if (!generateMessageAvps()) {
     debugLog(NGB_ERROR, "Message::init fail to fullfillAvps");
     return -1;
   }
   
-  printDebug();
   char *p = raw;
   int hdrLen = parseHdrAppToRaw(p);
   debugLog(NGB_MESSAGE, "Message::parseAppToRaw hdrLen is %d", hdrLen);
   p = p + hdrLen;
   int bodyLen = parseBodyAppToRaw(p);
+  parseAppToRawDone_ = true;
   return hdrLen + bodyLen;
 }
 
@@ -516,8 +540,16 @@ int Message::parseRawToApp(char *raw)
   debugLog(NGB_MESSAGE, "Message::parseRawToApp enter...");
   char *p = raw;
   int hdrLen = parseHdrRawToApp(p);
+  if (hdrLen == -1) {
+    debugLog(NGB_MESSAGE, "Message::parseRawToApp fail to parse header");
+    return -1;
+  }
   p = p + hdrLen;
   int bodyLen = parseBodyRawToApp(p);
+  if (bodyLen == -1) {
+    debugLog(NGB_MESSAGE, "Message::parseRawToApp fail to parse body");
+    return -1;
+  }
   return hdrLen + bodyLen;
 }
 
@@ -535,9 +567,21 @@ int Message::parseHdrRawToApp(char *raw)
              "error code is %d", commandCode_, hdr_.errcode);
     errorCode_ = hdr_.reply;
   }
+  debugLog(NGB_MESSAGE,
+             "Message::parseHdrRawToApp get comamnd code %d from message",
+             commandCode_);
   std::stringstream ss;
   ss << commandCode_;
+  
   command_ = dictMgr->getCommandName(ss.str());
+  dictMgr->getCommandName(ss.str());
+
+  if (!command_.size()) {
+    debugLog(NGB_MESSAGE,
+             "Message::parseHdrRawToApp get unsupport comamnd code %d",
+             commandCode_);
+    return -1;
+  }
   debugLog(NGB_MESSAGE,
            "Message::parseHdrRawToApp get %s message", command_.c_str());
   return sizeof(dfs_msg_header);

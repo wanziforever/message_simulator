@@ -29,6 +29,10 @@
 
 #define MAX_EVENTS 10
 
+static pthread_mutex_t udp_queue_mutex = PTHREAD_MUTEX_INITIALIZER;
+#define UDP_QUEUE_LOCK()  pthread_mutex_lock(&udp_queue_mutex)
+#define UDP_QUEUE_UNLOCK()  pthread_mutex_unlock(&udp_queue_mutex)
+
 typedef void* (UdpAgent::*Thread2Ptr)(void);
 typedef void* (*PthreadPtr)(void*);
 
@@ -98,7 +102,7 @@ bool UdpAgent::sendMsg(const char *ip, int port, char *msg, int len)
   mhandle handle;
   NGB_CREATE_MSG_HEADER(handle, ip, port);
   struct iovec iov[2];
-  handle.hdr.seq = Utils::getLlongLongRandom();
+  handle.hdr.seq = Utils::getTimeOfDayinUsec();
 
   INIT_IOVEC(handle.hdr, iov, msg, len);
 
@@ -141,9 +145,15 @@ void* UdpAgent::receiverThreadFunc()
                "UdpAgent::receiverThreadFunc received invalid message");
       continue;
     }
-    
+
+    debugLog(NGB_UDP_AGENT,
+             "UdpAgent::receiverThreadFunc msg queue size is %d",
+             recMsgQueue_.size());
     // put the message to message queue
+    UDP_QUEUE_LOCK();
     recMsgQueue_.push(msg);
+    totalCounter_++;
+    UDP_QUEUE_UNLOCK();
   }
 }
 
@@ -177,11 +187,22 @@ bool UdpAgent::registerReceiver(int fd)
 // a nsync function call
 Message* UdpAgent::receive()
 {
+  UDP_QUEUE_LOCK();
   if (!recMsgQueue_.empty()) {
     Message *msg;
     msg = recMsgQueue_.front();
     recMsgQueue_.pop();
+    UDP_QUEUE_UNLOCK();
     return msg;
   }
+  UDP_QUEUE_UNLOCK();
   return (Message *) -1;
+}
+
+void UdpAgent::clearQueue()
+{
+  UDP_QUEUE_LOCK();
+  std::queue<Message*> empty;
+  std::swap(recMsgQueue_, empty);
+  UDP_QUEUE_UNLOCK();
 }

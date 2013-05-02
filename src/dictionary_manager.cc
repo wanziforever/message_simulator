@@ -21,6 +21,7 @@
 #include "log.hh"
 #include "utils.hh"
 #include "ngb_defs.hh"
+#include "unistd.h"
 
 using namespace xercesc;
 // when want to parse a tag, add a XMLCH type string here for convinent
@@ -347,7 +348,7 @@ std::string DictionaryManager::getCommandName(std::string cmdCode)
            "DictionaryManager::getCommandName not found command code(%s)",
            cmdCode.c_str());
   // TODO: how to design return value to for the not found case
-  return std::string(""); 
+  return std::string("");
 }
 
 bool DictionaryManager::getOneCommand(const DOMNode *n,

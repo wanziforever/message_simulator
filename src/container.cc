@@ -101,6 +101,7 @@ bool AvpEntry::parseAppToRaw(char *raw, int &len)
   }
   
   delete vp;
+  data_ = raw;
   return true;
 }
 
