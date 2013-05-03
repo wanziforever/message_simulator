@@ -48,6 +48,9 @@ UdpAgent::~UdpAgent()
 bool UdpAgent::init(int localPort)
 {
   debugLog(NGB_UDP_AGENT,
+             "UdpAgent::init error counter is %ld",
+             errorCounter_);
+  debugLog(NGB_UDP_AGENT,
            "UdpAgent::init enter with local port(%d)", localPort);
   if ((socket_ = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
     debugLog(NGB_ERROR, "UdpAgent::init fail to create UDP socket");
@@ -128,14 +131,14 @@ bool UdpAgent::sendMsg(const char *ip, int port, char *msg, int len)
 void* UdpAgent::receiverThreadFunc()
 {
   debugLog(NGB_UDP_AGENT, "UdpAgent::receiverThreadFunc enter");
-  Message *msg = new Message(ANSWER);
-  struct iovec iov[2];
-  struct in_addr src;
-  udp_header udpheader;
-  INIT_IOVEC(udpheader, iov, msg->getRawPtr(), COMMON_MSG_SIZE);
-  struct msghdr hdr = {0};
-  INIT_IOVEC_MSG(hdr, iov, src);
   while (1) {
+    Message *msg = new Message(ANSWER);
+    struct iovec iov[2];
+    struct in_addr src;
+    udp_header udpheader;
+    INIT_IOVEC(udpheader, iov, msg->getRawPtr(), COMMON_MSG_SIZE);
+    struct msghdr hdr = {0};
+    INIT_IOVEC_MSG(hdr, iov, src);
     int r = recvmsg(socket_, &hdr, 0 /*flags*/);
     debugLog(NGB_UDP_AGENT,
              "UdpAgent::receiverThreadFunc got one message");
@@ -147,13 +150,23 @@ void* UdpAgent::receiverThreadFunc()
     }
 
     debugLog(NGB_UDP_AGENT,
-             "UdpAgent::receiverThreadFunc msg queue size is %d",
+             "UdpAgent::receiverThreadFunc msg queue size is %u",
              recMsgQueue_.size());
     // put the message to message queue
     UDP_QUEUE_LOCK();
     recMsgQueue_.push(msg);
     totalCounter_++;
     UDP_QUEUE_UNLOCK();
+
+    debugLog(NGB_UDP_AGENT,
+             "UdpAgent::receiverThreadFunc msg queue size is %ld",
+             errorCounter_);
+    
+    // check the message error flag
+    struct dfs_msg_header *dfs_hdr = (struct dfs_msg_header*)msg->getRawPtr();
+    if (dfs_hdr->reply == 1) {
+      errorCounter_++;
+    }
   }
 }
 

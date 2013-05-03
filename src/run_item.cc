@@ -171,10 +171,10 @@ bool RunItem::sendMessage()
   
   updatePerformanceData(msg_);
   ////// test code for parsing  message just finish encode //////////
-  Message msgR;
-  //TODO: parseRawToApp to be the self handling of the raw data buffer
-  msgR.parseRawToApp(g_buf);
-  msgR.printDebug();
+  //essage msgR;
+  ///TODO: parseRawToApp to be the self handling of the raw data buffer
+  //sgR.parseRawToApp(g_buf);
+  //sgR.printDebug();
   ////////////////////////// END ////////////////////////////////////
 
   len = FIX_MESSAGE_CONTENT_SIZE;
@@ -196,26 +196,7 @@ bool RunItem::sendMessage()
 bool RunItem::receiveMessage()
 {
   debugLog(NGB_RUN_ITEM, "RunItem::receiveMessage enter...");
-  // Message msg;
-  // msg.init();
-  // int len = msg.parseRawToApp((char*)g_buf);
-//  while (1) {
-//#ifdef UDP
-//    if (g_udp_agent->getQueueSize() > 0) {
-//      break;
-//    }
-//#elif defined TCP
-//    if (g_tcp_agent->getQueueSize() > 0) {
-//      break;
-//    }
-//#elif defined TCPD
-//    if (g_tcpd_agent->getQueueSize() > 0) {
-//      break;
-//    }
-//#endif
-//    usleep(20000);
-//    //debugLog(NGB_RUN_ITEM, "RunItem::receiveMessage waiting for message");
-//  }
+
   int timewait = 0;
   int timetowait = timeOut_ * 1000000;
   while (1) {
@@ -236,23 +217,28 @@ bool RunItem::receiveMessage()
       debugLog(NGB_RUN_ITEM,
                "RunItem::receiveMessage timetowait %d, timewait %d",
                timetowait, timewait);
-
-      debugLog(NGB_RUN_ITEM,
-               "RunItem::receiveMessage timeout wait message");
       return false;
     }
   }
-    debugLog(NGB_RUN_ITEM, "RunItem::receiveMessage get one message");
+  
+  debugLog(NGB_RUN_ITEM, "RunItem::receiveMessage get one message, %u", msg_);
   // TODO: parseRawToApp to be self handling of the raw data buffer
-  if (!msg_->parseRawToApp(msg_->getRawPtr())) {
-    debugLog(NGB_RUN_ITEM,
-             "RunItem::receiveMessage fail to parse raw to app");
-    return false;
+  if (!in_performance_environment) {
+    
+    if (!msg_->parseRawToApp(msg_->getRawPtr())) {
+      debugLog(NGB_RUN_ITEM,
+               "RunItem::receiveMessage fail to parse raw to app");
+      delete msg_;
+      msg_ = 0;
+      return false;
+    }
+    msg_->printDebug();
+    display(msg_->getDisplayData());
   }
-  msg_->printDebug();
-  display(msg_->getDisplayData());
-  delete msg_;
-  msg_ = 0;
+  if (msg_) {
+    delete msg_;
+    msg_ = 0;
+  }
 
   debugLog(NGB_RUN_ITEM, "RunItem::receiveMessage exit...");
   return true;
@@ -278,8 +264,10 @@ bool RunItem::setupPerformanceData()
       break;
     }
   } while (0);
-  
-  delete pconfMgr;
+  if (pconfMgr) {
+    delete pconfMgr;
+    pconfMgr = 0;
+  }
   debugLog(NGB_RUN_ITEM,
            "RunItem::setupPerformanceData %s", pconf_.toString().c_str());
   debugLog(NGB_RUN_ITEM, "RunItem::setupPerformanceData exit");

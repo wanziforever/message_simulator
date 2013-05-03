@@ -9,6 +9,7 @@ public:
 
   static void setCurrentTPS(int num);
   static void setQueueMsgNum(unsigned long long num);
+  static void setErrorNum(unsigned long long num);
   static void setMsgReceived(unsigned long long num);
   static void setMsgSend(unsigned long long num);
   static void setTransactionFinished(unsigned long long num);
@@ -19,15 +20,16 @@ public:
   static void printLoadStatusNormal();
   void printPermanent();
   void printPermanentNormal();
-  
-private:
   void print();
   void printNormal();
+  void stop();
+private:
   void initPermString();
 
   // members
   static int current_tps_;
   static unsigned long long queueMsg_;
+  static unsigned long long errorMsg_;
   static unsigned long long msgReceived_;
   static unsigned long long msgSend_;
   static unsigned long long transaction_;
@@ -42,4 +44,6 @@ private:
   std::string dyna_msgSend_;
   std::string dyna_msgReceived_;
   std::string dyna_msgQueued_;
+
+  bool stopped_;
 };

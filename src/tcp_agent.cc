@@ -304,6 +304,13 @@ void* TcpAgent::receiverThreadFunc()
     debugLog(NGB_TCP_AGENT,
              "TcpAgent::receiverThreadFunc %d message in queue",
              recMsgQueue_.size());
+    // check the message error flag
+    struct dfs_msg_header *hdr = (struct dfs_msg_header *)msg->getRawPtr();
+    if (hdr->reply == 1) {
+      debugLog(NGB_UDP_AGENT,
+               "TcppAgent::receiverThreadFunc get one error message");
+      errorCounter_++;
+    }
   }
 }
 

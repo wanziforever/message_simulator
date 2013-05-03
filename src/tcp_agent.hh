@@ -27,7 +27,7 @@
 class TcpAgent
 {
 public:
-  TcpAgent() : socket_(0), totalCounter_(0) {}
+  TcpAgent() : socket_(0), totalCounter_(0), errorCounter_(0) {}
   ~TcpAgent();
   bool init(int localPort);
   bool tcpConnect(const char *ip, int port);
@@ -36,6 +36,7 @@ public:
   int getQueueSize();
   Message* receive();
   unsigned long long getTotalCounter() { return totalCounter_; }
+  unsigned long long getErrorCounter() { return errorCounter_; }
   void clearQueue();
 private:
   int writeData(int fd, char *buf, int size);
@@ -50,6 +51,7 @@ private:
   int socket_;
   int epoolfd_;
   unsigned long long totalCounter_;
+  unsigned long long errorCounter_;
   std::queue<Message*> recMsgQueue_;
 };
 

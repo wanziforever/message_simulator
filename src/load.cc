@@ -18,7 +18,7 @@ extern TcpAgent *g_tcp_agent;
 int tps = 0;
 unsigned long long transaction = 0;
 
-extern bool SYSTEM_STOP;
+bool LOAD_DO_STOP = false;
 
 typedef void* (Load::*Thread2Ptr)(void);
 typedef void* (*PthreadPtr)(void*);
@@ -27,8 +27,8 @@ void Load::start(Task *task, int expTps)
 {
   task_ = task;
   expTps_ = expTps;
-  debugLog(NGB_TASK, "Load::start enter, expected TPS is %d", expTps);
-  debugLog(NGB_TASK, "Load::start enter print task %s",
+  debugLog(NGB_LOAD, "Load::start enter, expected TPS is %d", expTps);
+  debugLog(NGB_LOAD, "Load::start enter print task %s",
            task_->toString().c_str());
   pthread_t thread;
   pthread_attr_t thread_attr;
@@ -44,30 +44,40 @@ void Load::start(Task *task, int expTps)
   return;
 }
 
+void Load::stop()
+{
+  debugLog(NGB_LOAD, "Load::stop called");
+  LOAD_DO_STOP = true;
+  while (!stopped_) {
+    usleep(2000);
+  }
+  sleep(4);
+  debugLog(NGB_LOAD, "Load::stop set the view data at last");
+  setViewData();
+  // better to delete the run_item resource, but not big problem
+  // process will quit
+  debugLog(NGB_LOAD, "Load::stop load has been stopped");
+}
+
 void* Load::performanceRunThreadFunc()
 {
   unsigned long long expInterval = 0;
   unsigned long long interval = 0;
   expInterval = 1000000 / expTps_;
-  while (!SYSTEM_STOP) {
-    debugLog(NGB_TASK,
-             "Load::performanceRunThreadFunc loop again again");
-    debugLog(NGB_TASK,
-             "Load::performanceRunThreadFunc enter, "
-             "expected TPS is %d", expTps_);
-    debugLog(NGB_TASK,
+  while (!LOAD_DO_STOP) {
+    debugLog(NGB_LOAD,
              "Load::performanceRunThreadFunc task data %s",
              task_->toString().c_str());
     interval = task_->processTask();
     if (interval == -1) {
-      debugLog(NGB_TASK,
+      debugLog(NGB_LOAD,
                "Load::performanceRunThreadFunc fail to process task");
       View::setLoadStatus("load thread exit with error");
       return (void*)-1;
     }
     transaction++;
     if (interval < expInterval) {
-      debugLog(NGB_TASK,
+      debugLog(NGB_LOAD,
                "Load::performanceRunThreadFunc delay %d usec "
                "for next transaction", expInterval-interval);
       usleep(expInterval - interval);
@@ -79,6 +89,7 @@ void* Load::performanceRunThreadFunc()
     maintainQueueSize();
     setViewData();
   }
+  stopped_ = true;
 }
 
 void Load::maintainQueueSize()
@@ -102,7 +113,9 @@ void Load::setViewData()
   View::setTransactionFinished(transaction);
 #ifdef UDP
   View::setQueueMsgNum(g_udp_agent->getTotalCounter());
+  View::setErrorNum(g_udp_agent->getErrorCounter());
 #elif defined TCP
   View::setQueueMsgNum(g_tcp_agent->getTotalCounter());
+  View::setErrorNum(g_tcp_agent->getErrorCounter());
 #endif
 }

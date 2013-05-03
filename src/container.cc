@@ -265,10 +265,13 @@ bool MessageEntryContainer::parseAppToRaw(char *raw, int &offset)
 
 bool MessageEntryContainer::parseRawToApp(char *raw, int &offset)
 {
+  debugLog(NGB_CONTAINER, "Container::parseRawToApp size is %d",
+           avpList_.size());
   debugLog(NGB_CONTAINER, "Container::parseRawToApp enter...");
   offset = 0;
   int len = 0;
   char *pos = 0; // current position the raw data will be write to
+  debugLog(NGB_CONTAINER, "Container::parseRawToApp going to go through..");
   for (std::vector<AvpEntry*>::iterator it = avpList_.begin();
        it != avpList_.end(); ++it) {
     if ((*it)->getType() == "start_of_group" ||
@@ -286,6 +289,7 @@ bool MessageEntryContainer::parseRawToApp(char *raw, int &offset)
     debugLog(NGB_CONTAINER, "Container::parseRawToApp get length %d", len);
     offset += len;
   }
+  debugLog(NGB_CONTAINER, "Container::parseRawToApp exit...");
   return true;
 }
 

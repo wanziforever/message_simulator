@@ -44,6 +44,8 @@ extern const int NGB_CONTAINER = NGB_TRACE_BASE + 8; // 2008
 extern const int NGB_VALUE_PARSER = NGB_TRACE_BASE + 9; // 2009
 extern const int NGB_TCP_AGENT = NGB_TRACE_BASE + 10; // 2010
 extern const int NGB_PERF_CONFIG = NGB_TRACE_BASE + 11; // 2011
+extern const int NGB_VIEW = NGB_TRACE_BASE + 12; // 2012
+extern const int NGB_LOAD = NGB_TRACE_BASE + 13; // 2013
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 // ADD TRACE NUMBER BEFORE THIS LINE, THE VALUE SHOULD NOT GREATER
 // THAN THE MAX TRACE FLAG NUMBER

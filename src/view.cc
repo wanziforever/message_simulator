@@ -1,28 +1,30 @@
 #include "view.hh"
 #include "config_manager.hh"
 #include "utils.hh"
+#include "log.hh"
 #include <unistd.h>
 #include <curses.h>
 
 int View::current_tps_ = 0;
 unsigned long long View::queueMsg_ = 0;
+unsigned long long View::errorMsg_ = 0;
 unsigned long long View::msgReceived_ = 0;
 unsigned long long View::msgSend_ = 0;
 unsigned long long View::transaction_ = 0;
 std::string View::loadStatus_;
-extern bool SYSTEM_STOP;
 int startX = 10;
 int startY = 10;
+bool VIEW_DO_STOP = false;
 
 View::View()
 {
   rate_ = 1000000;
+  stopped_ = false;
   initPermString();
 }
 
 View::~View()
 {
-  endwin();
 }
 
 void View::initPermString()
@@ -44,7 +46,8 @@ void View::printPermanentNormal()
 {
   std::cout << perm_connectionInfo_ << std::endl
             << "task: " << perm_taskInfo_ << std::endl
-            << "expected TPS: " << perm_expectedTPS_ << std::endl;
+            << "expected TPS: " << perm_expectedTPS_ << std::endl
+            << "--------------------------------------------" << std::endl;
 }
 
 void View::printPermanent()
@@ -59,20 +62,22 @@ void View::printPermanent()
 
 void View::printDynamicNormal()
 {
-  std::cout << "TPS: " << current_tps_ << std::endl
+  std::cout << "TPS: " << current_tps_ << "        "
             << "Transaction: " << transaction_ << std::endl
-            << "send: " << msgSend_ << std::endl
+            << "send: " << msgSend_ << "       "
             << "received: " << msgReceived_ << std::endl
-            << "queued: " << queueMsg_ << std::endl;
+            << "queued: " << queueMsg_ << "      "
+            << "error: " << errorMsg_ << std::endl;
 }
 
 void View::printDynamic()
 {
   mvprintw(startX + 3, startY + 0, "TPS: %d", current_tps_);
-  mvprintw(startX + 3, startY + 30, "Transaction: %d", transaction_);
+  mvprintw(startX + 3, startY + 25, "Transaction: %d", transaction_);
   mvprintw(startX + 4, startY + 0, "send: %d", msgSend_);
-  mvprintw(startX + 4, startY + 15, "received: %d", msgReceived_);
-  mvprintw(startX + 4, startY + 30, "queued: %d", queueMsg_);
+  mvprintw(startX + 4, startY + 25, "received: %d", msgReceived_);
+  mvprintw(startX + 4, startY + 50, "queued: %d", queueMsg_);
+  mvprintw(startX + 5, startY + 0, "error: %d", errorMsg_);
 }
 
 void View::start()
@@ -84,23 +89,36 @@ void View::start()
 void View::print()
 {
   initscr();
-  while (!SYSTEM_STOP) {
+  while (!VIEW_DO_STOP) {
+    debugLog(NGB_VIEW, "View::print in while");
     printPermanent();
     printDynamic();
     refresh();
     usleep(rate_);
   }
+  stopped_ = true;
+  
+}
+
+void View::stop()
+{
+  debugLog(NGB_VIEW, "View::stop called");
+  VIEW_DO_STOP = true;
+  
+  debugLog(NGB_VIEW, "View::stop exit curses environment");
+  //do {
+  //  endwin();
+  //} while(0);
   endwin();
+  debugLog(NGB_VIEW, "view::stop print last load information");
+  printNormal();
 }
 
 void View::printNormal()
 {
-  while (!SYSTEM_STOP) {
-    printPermanentNormal();
-    printDynamicNormal();
-    printLoadStatusNormal();
-    usleep(rate_);
-  }
+  printPermanentNormal();
+  printDynamicNormal();
+  //printLoadStatusNormal();
 }
 
 void View::printLoadStatusNormal()
@@ -121,6 +139,11 @@ void View::setCurrentTPS(int num)
 void View::setQueueMsgNum(unsigned long long num)
 {
   queueMsg_ = num;
+}
+
+void View::setErrorNum(unsigned long long num)
+{
+  errorMsg_ = num;
 }
 
 void View::setMsgReceived(unsigned long long num)

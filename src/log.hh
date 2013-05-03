@@ -38,6 +38,8 @@ extern const int NGB_CONTAINER;
 extern const int NGB_VALUE_PARSER;
 extern const int NGB_TCP_AGENT;
 extern const int NGB_PERF_CONFIG;
+extern const int NGB_VIEW;
+extern const int NGB_LOAD;
 
 #endif
 

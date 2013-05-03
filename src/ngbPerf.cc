@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include <signal.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include "ngb_defs.hh"
 #include "dictionary_manager.hh"
 #include "config_manager.hh"
@@ -48,8 +49,6 @@ const std::string LOG_FILE_NAME = "debuglog";
 DictionaryManager *dictMgr = 0;
 
 bool in_performance_environment = true;
-
-bool SYSTEM_STOP = false;
 
 void handleSignal();
 void over();
@@ -117,23 +116,27 @@ int main(int argc, char *argv[])
 
 void over()
 {
-  if (dictMgr)     delete dictMgr;
-  if (view)        delete view;
-  if (load)        delete load;
+  load->stop();
+  if (load)        { delete load; load = 0; }
+
+  view->stop();
+  if (view)        { delete view; view = 0; }
+
+  if (dictMgr)     { delete dictMgr; dictMgr = 0; }
+  
   //if (task)        delete task;
 #ifdef UDP
-  if (g_udp_agent) delete g_udp_agent;
+  if (g_udp_agent) { delete g_udp_agent; g_udp_agent = 0; }
 #elif defined TCP
-  if (g_tcp_agent) delete g_tcp_agent;
+  if (g_tcp_agent) { delete g_tcp_agent; g_tcp_agent = 0; }
 #elif defined TCPD
-  if (g_tcpd_agent) delete g_tcpd_agent;
+  if (g_tcpd_agent) { delete g_tcpd_agent; g_tcpd_agent = 0; }
 #endif
 }
 
 void system_stop(int s)
 {
-  SYSTEM_STOP = true;
-  sleep(2);
+  debugLog(NGB_MAIN, "system going to stop by signal SIGINT");
   over();
   debugLog(NGB_MAIN, "program stop");
   exit(1);
