@@ -32,6 +32,9 @@
 #ifdef UDP
 #include "udp_agent.hh"
 UdpAgent *g_udp_agent = 0;
+#elif defined UDPD
+#include "udpd_agent.hh"
+UdpdAgent *g_udpd_agent = 0;
 #elif defined TCP
 #include "tcp_agent.hh"
 TcpAgent *g_tcp_agent = 0;
@@ -66,6 +69,10 @@ int main(int argc, char *argv[])
   std::cout <<" == UDP == "<< std::endl;
   g_udp_agent = new UdpAgent();
   g_udp_agent->init(ConfigManager::getLocalPort());
+#elif defined UDPD
+  std::cout <<" == UDP == "<< std::endl;
+  g_udpd_agent = new UdpdAgent();
+  g_udpd_agent->init(ConfigManager::getLocalPort());
 #elif defined TCP
   std::cout <<" == TCP == ";fflush(stdout);
   g_tcp_agent = new TcpAgent();

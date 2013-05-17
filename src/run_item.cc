@@ -27,6 +27,9 @@
 #ifdef UDP
 #include "udp_agent.hh"
 extern UdpAgent *g_udp_agent;
+#elif defined UDPD
+#include "udpd_agent.hh"
+extern UdpdAgent *g_udpd_agent;
 #elif defined TCP
 #include "tcp_agent.hh"
 extern TcpAgent *g_tcp_agent;
@@ -184,6 +187,8 @@ bool RunItem::sendMessage()
                        ConfigManager::getDestPort(),
                        g_buf,
                        len);
+#elif defined UDPD
+  g_udpd_agent->sendMsg(g_buf, len);
 #elif defined TCP
   g_tcp_agent->sendMsg(g_buf, len);
 #elif defined TCPD
@@ -202,12 +207,18 @@ bool RunItem::receiveMessage()
   while (1) {
 #ifdef UDP
     msg_ = g_udp_agent->receive();
+#elif defined UDPD
+    msg_ = g_udpd_agent->receive();
 #elif defined TCP
     msg_ = g_tcp_agent->receive();
 #elif defined TCPD
     msg_ = g_tcpd_agent->receive();
 #endif
 
+    if (!msg_) {
+      debugLog(NGB_RUN_ITEM, "RunItem::receiveMessage get wrong message");
+      return false;
+    }
     if (msg_ != (Message *)-1) {
       break;
     }

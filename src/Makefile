@@ -22,8 +22,9 @@ CC = gcc
 
 MAIN = ngbSim
 TARGET_U  = $(MAIN)udp
+TARGET_UD = $(MAIN)ud
 TARGET_T = $(MAIN)tcp
-TARGET_D = $(MAIN)d
+TARGET_TD = $(MAIN)td
 TARGET_PERF_U = ngbPerfudp
 TARGET_PERF_T = ngbPerftcp
 
@@ -31,7 +32,7 @@ UT_TARGET = ngbSim_unittest
 build_root=$(shell pwd)/..
 INCLUDE_DIR = -I. -I$(build_root)/inc
 LIB_DIR = -L$(build_root)/lib
-LIBS    = -lxerces-c -lpthread -lcurses
+LIBS    = -lxerces-c -lpthread -lncurses
 # gtest library with main function for unit test
 GTEST_LIB_MAIN_STATIC = $(build_root)/lib/gtest_main.a
 
@@ -46,6 +47,7 @@ SRC = \
 	task.cc \
 	run_item.cc \
 	udp_agent.cc \
+	udpd_agent.cc \
 	tcp_agent.cc \
 	tcpd_agent.cc \
 	container.cc \
@@ -58,8 +60,9 @@ PERF_SRC = view.cc \
 	load.cc
 
 OBJ_U = $(addsuffix _u.o, $(basename $(SRC)))
+OBJ_UD = $(addsuffix _ud.o, $(basename $(SRC)))
 OBJ_T = $(addsuffix _t.o, $(basename $(SRC)))
-OBJ_D = $(addsuffix _d.o, $(basename $(SRC)))
+OBJ_TD = $(addsuffix _td.o, $(basename $(SRC)))
 OBJ_PERF_U = $(addsuffix _u.o, $(basename $(PERF_SRC)))
 OBJ_PERF_T = $(addsuffix _t.o, $(basename $(PERF_SRC)))
 
@@ -69,23 +72,27 @@ OBJ_PERF_T = $(addsuffix _t.o, $(basename $(PERF_SRC)))
 build_bin = $(build_root)/bin
 
 #
-#all: $(build_bin)/$(TARGET_U) \
-#	$(build_bin)/$(TARGET_T) \
-#	$(build_bin)/$(TARGET_D) \
-#	$(build_bin)/$(TARGET_PERF_U) \
-#	$(build_bin)/$(TARGET_PERF_T)
+all: $(build_bin)/$(TARGET_U) \
+	$(build_bin)/$(TARGET_UD) \
+	$(build_bin)/$(TARGET_T) \
+	$(build_bin)/$(TARGET_TD) \
+	$(build_bin)/$(TARGET_PERF_U) \
+	$(build_bin)/$(TARGET_PERF_T)
 
-all: $(build_bin)/$(TARGET_PERF_U)
+#all: $(build_bin)/$(TARGET_PERF_U)
 
 #
 # compile the main function
 $(TARGET_U).o:$(MAIN).cc
 	$(CXX) -DUDP $(INCLUDE_DIR) -c $< -o $@
 
+$(TARGET_UD).o:$(MAIN).cc
+	$(CXX) -DUDPD $(INCLUDE_DIR) -c $< -o $@
+
 $(TARGET_T).o:$(MAIN).cc
 	$(CXX) -DTCP $(INCLUDE_DIR) -c $< -o $@
 
-$(TARGET_D).o:$(MAIN).cc
+$(TARGET_TD).o:$(MAIN).cc
 	$(CXX) -DTCPD $(INCLUDE_DIR) -c $< -o $@
 
 $(TARGET_PERF_U).o:ngbPerf.cc
@@ -97,10 +104,13 @@ $(TARGET_PERF_T).o:ngbPerf.cc
 $(OBJ_U):%_u.o:%.cc
 	$(CXX) -DUDP $(INCLUDE_DIR) -c $< -o $@
 
+$(OBJ_UD):%_ud.o:%.cc
+	$(CXX) -DUDPD $(INCLUDE_DIR) -c $< -o $@
+
 $(OBJ_T):%_t.o:%.cc
 	$(CXX) -DTCP $(INCLUDE_DIR) -c $< -o $@
 
-$(OBJ_D):%_d.o:%.cc
+$(OBJ_TD):%_td.o:%.cc
 	$(CXX) -DTCPD $(INCLUDE_DIR) -c $< -o $@
 
 $(OBJ_PERF_U):%_u.o:%.cc
@@ -116,11 +126,15 @@ $(build_bin)/$(TARGET_U): $(TARGET_U).o $(OBJ_U)
 	@echo "build UDP binary..."
 	$(CXX) $^ -o $@ $(LIB_DIR) $(LIBS)
 
+$(build_bin)/$(TARGET_UD): $(TARGET_UD).o $(OBJ_UD)
+	@echo "build TCP binary..."
+	$(CXX) $^ -o $@ $(LIB_DIR) $(LIBS)
+
 $(build_bin)/$(TARGET_T): $(TARGET_T).o $(OBJ_T)
 	@echo "build TCP binary..."
 	$(CXX) $^ -o $@ $(LIB_DIR) $(LIBS)
 
-$(build_bin)/$(TARGET_D): $(TARGET_D).o $(OBJ_D)
+$(build_bin)/$(TARGET_TD): $(TARGET_TD).o $(OBJ_TD)
 	@echo "build TCP binary..."
 	$(CXX) $^ -o $@ $(LIB_DIR) $(LIBS)
 

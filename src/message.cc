@@ -331,7 +331,9 @@ bool Message::generateMessageAvps()
       //return false;
     }
     e->setSignature(signature);
-    r->setAvpEntryLink(e); // for performance implementation
+    if (r != (RawEntry*)-1) {
+      r->setAvpEntryLink(e); // for performance implementation
+    }
     e->setValue(r != (RawEntry*)-1 ? r->getValue() : std::string(""));
     avpContainer_.appendAvp(e);
   }

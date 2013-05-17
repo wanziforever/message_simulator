@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include "value_parser.hh"
 #include "log.hh"
+#include <arpa/inet.h>
 
 // TODO; consider the compiler will have the margin indent
 class IPaddressValueParser : public ValueParser
@@ -56,7 +57,7 @@ class IPaddressValueParser : public ValueParser
       return true;
     }
     *((unsigned int*)raw) =
-      ipbytes[0] | ipbytes[1] << 8 | ipbytes[2] << 16 | ipbytes[3] << 24;
+      htonl(ipbytes[0] | ipbytes[1] << 8 | ipbytes[2] << 16 | ipbytes[3] << 24);
     len += sizeof(int);
     return true;
   }
@@ -68,6 +69,7 @@ class IPaddressValueParser : public ValueParser
     len = 0;
     unsigned int numericval;
     numericval = *((unsigned int*)valueStr_);
+    numericval = ntohl(numericval);
     char ips[20] = {0};
     sprintf(ips, "%d.%d.%d.%d",
             (numericval >> 24) & 0xFF,
